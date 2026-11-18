@@ -98,6 +98,34 @@ def family_margin(r: float, phi: float, gross: float, net: float) -> float:
     return float(r * (phi * net + (1.0 - phi) * gross))
 
 
+def validate_rates(rates: pd.DataFrame) -> None:
+    """Reject rates with invalid base rates or offset fractions.
+
+    The error identifies the first offending (PB, product, tier) row so the
+    loader can report the problematic source record.
+    """
+    if not isinstance(rates, pd.DataFrame):
+        raise TypeError("rates must be a pandas DataFrame")
+    required = {"pb_id", "product_id", "liquidity_tier", "base_rate", "phi"}
+    missing = required.difference(rates.columns)
+    if missing:
+        raise ValueError(f"rates are missing required columns: {', '.join(sorted(missing))}")
+    base_rate = pd.to_numeric(rates["base_rate"], errors="coerce").to_numpy(dtype=float)
+    phi = pd.to_numeric(rates["phi"], errors="coerce").to_numpy(dtype=float)
+    invalid = (
+        ~np.isfinite(base_rate)
+        | (base_rate <= 0.0)
+        | ~np.isfinite(phi)
+        | (phi < 0.0)
+        | (phi >= 1.0)
+    )
+    bad_rows = np.flatnonzero(invalid)
+    if len(bad_rows):
+        row = rates.iloc[int(bad_rows[0])]
+        key = (row["pb_id"], row["product_id"], row["liquidity_tier"])
+        raise ValueError(f"invalid base_rate or phi for (pb_id, product_id, liquidity_tier) {key!r}")
+
+
 def _provider_ids(pbs: object) -> tuple[object, ...]:
     if isinstance(pbs, pd.DataFrame):
         if "pb_id" not in pbs:
