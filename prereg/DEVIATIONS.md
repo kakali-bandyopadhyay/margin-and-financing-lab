@@ -37,3 +37,15 @@ Each entry: date · what changed · why · effect on results · commit.
 - Why: like the D-03 usage gap, an omitted PM's Euler contribution could silently disappear from the per-PM exhibit. The total check guards the exhibit decomposition.
 - Effect: no change to reported numbers; the primary run includes every PM and continues to match M.
 - Commit: (this commit)
+
+## D-07 · 2026-11-18 · A8 model-document disclosure test
+- What: `tests/acceptance/test_a8_not_validated.py` checks that the model document contains the required validation-status sentence exactly once and presents its 15 numbered headings in order.
+- Why: pin the required model-document outline and disclosure before the documentation is finalized.
+- Effect: documentation control only; no model calculations or results change.
+- Commit: (this commit)
+
+## D-08 · 2026-11-18 · Enforce the pre-registered input contract at load
+- What: `io.py` rejects invalid PB concentration terms, parameter domains, product/issuer/locate combinations, ineligible concentration flags, invalid positions, duplicate or missing rate keys, missing price history, and missing provenance tags in SOURCES.md.
+- Why: these checks were promised in pre-registration §2 but were not enforced at load; the loader should reject inputs outside that contract before modeling.
+- Effect: the existing synthetic input remains unchanged; plumbing tests exercise the rejection cases.
+- Commit: (this commit)
