@@ -19,3 +19,9 @@ Each entry: date · what changed · why · effect on results · commit.
 - Why: found in Claude review of 5ce9d22 – an omitted PM's margin fell silently into R and was charged to the listed PMs (Σ still = M, so no check fired). Test written after the model code, hence logged.
 - Effect: none on reported results – the primary run passes every PM in pms.csv.
 - Commit: (this commit)
+
+## D-04 · 2026-11-18 · M3 exhibits: tests X1–X3 added; Euler wording corrected
+- What: acceptance tests X1 (re-solve), X2 (all-in cost), and X3 (Euler with kinks) added before `exhibits.py`. The X3d hand-case fixture was corrected during implementation to label the govt-bond position as PM B, as specified. Prereg §5 “Euler sums to M except at kinks” corrected: for a convex degree-one homogeneous proxy every subgradient sums to M; kinks make the per-PM split non-unique, so each PM's Euler value is reported with a [low, high] range. Aumann–Shapley equals Euler where Euler is unique (gradient constant along the ray); not computed separately.
+- Why: the original statement is mathematically inexact; the tests pin the corrected behaviour.
+- Effect: none on the primary usage, residual, or charge; exhibit content as pre-registered (kinks still reported).
+- Commit: (this commit)
