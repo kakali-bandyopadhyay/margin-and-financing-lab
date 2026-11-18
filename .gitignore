@@ -5,7 +5,8 @@ __pycache__/
 *.egg-info/
 *.duckdb
 *.db
-reports/
+reports/*
+!reports/run_42/
 *.zip
 *.xlsx
 .pytest_cache/

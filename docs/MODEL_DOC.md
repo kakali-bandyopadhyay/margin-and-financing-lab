@@ -124,7 +124,7 @@ The Git history shows the tests landing before their associated implementation: 
 
 ## 8 Benchmarking (sanity only)
 
-A7 compares `IRSF_10Y` with the CBOT ZN December 2026 front contract. For each PB it divides the model's `margin_by_pb` amount by notional and compares that percentage with exchange initial margin as a percentage of notional. The allowed proxy-to-exchange ratio was set to 0.5–4.0 before the CME value was checked. The test reads the non-HRP outright margin and same-day settlement recorded in [`exchange_margin.csv`](../data/public/exchange_margin.csv); its PB-specific ratios belong in [RESULTS.md](../RESULTS.md) after the planned fresh run. The check screens for scale or unit mistakes; it is not calibration and does not change any rate. See [SOURCES §4](../data/SOURCES.md#4-public-sources-sanity-check-a7-only) and [D-06](../prereg/DEVIATIONS.md).
+A7 compares `IRSF_10Y` with the CBOT ZN December 2026 front contract. For each PB it divides the model's `margin_by_pb` amount by notional and compares that percentage with exchange initial margin as a percentage of notional. The allowed proxy-to-exchange ratio was set to 0.5–4.0 before the CME value was checked. The test reads the non-HRP outright margin and same-day settlement recorded in [`exchange_margin.csv`](../data/public/exchange_margin.csv); PB-specific ratios are reported in [RESULTS.md §8](../RESULTS.md#8-exchange-margin-sanity-check-a7--sanity-only-not-calibration). The check screens for scale or unit mistakes; it is not calibration and does not change any rate. See [SOURCES §4](../data/SOURCES.md#4-public-sources-sanity-check-a7-only) and [D-06](../prereg/DEVIATIONS.md).
 
 ## 9 Outcomes analysis
 
@@ -132,7 +132,7 @@ There is no realised outcome series to compare with this model: the portfolio is
 
 ## 10 Sensitivity analysis
 
-The planned grid changes volatility buckets by one step, scales base rates by 1.25, tests θ at 0.20 and 0.30, and varies ℓ across 100, 300 and 500 basis points; the ℓ cases were added in D-01. Each scenario re-runs the optimiser. The final grid and the E1–E5 expected-behaviour assessment will be recorded in [RESULTS.md](../RESULTS.md). They remain pending until the fresh final-HEAD run specified next in the guide; this document does not declare those outcomes. See [pre-registration §§8–9](../prereg/PREREGISTRATION.md#8-outputs-reported-all-of-them-whatever-they-show).
+The planned grid changes volatility buckets by one step, scales base rates by 1.25, tests θ at 0.20 and 0.30, and varies ℓ across 100, 300 and 500 basis points; the ℓ cases were added in D-01. Each scenario re-runs the optimiser. The final sensitivity grid is in [RESULTS.md §7](../RESULTS.md#7-sensitivity-grid-each-scenario-re-optimised), and the E1–E5 expected-behaviour assessment is in [RESULTS.md §9](../RESULTS.md#9-expected-behaviour-e1e5-prereg-9--confirmed--not-confirmed). See [pre-registration §§8–9](../prereg/PREREGISTRATION.md#8-outputs-reported-all-of-them-whatever-they-show).
 
 ## 11 Limitations
 
