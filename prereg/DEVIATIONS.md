@@ -13,3 +13,9 @@ Each entry: date · what changed · why · effect on results · commit.
 - Why: every margin call rebuilt the rate index with pandas merges (~12 ms per call); the acceptance suite took ~110 s.
 - Effect: no change to formulas, parameters, draws, tolerances or assertions. A1 unchanged to the cent; A5 ℓ = 100 objective unchanged (21,714,337.24). Suite runtime ~110 s → ~3 s.
 - Commit: (this commit)
+
+## D-03 · 2026-11-18 · Attribution: reject pm_ids that omit a PM in the book (test after model code)
+- What: `pm_usage` raises ValueError when an explicit `pm_ids` leaves out a `pm_id` present in the book; acceptance test added to A6c.
+- Why: found in Claude review of 5ce9d22 – an omitted PM's margin fell silently into R and was charged to the listed PMs (Σ still = M, so no check fired). Test written after the model code, hence logged.
+- Effect: none on reported results – the primary run passes every PM in pms.csv.
+- Commit: (this commit)

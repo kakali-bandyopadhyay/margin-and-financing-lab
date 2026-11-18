@@ -50,6 +50,9 @@ def pm_usage(
         pm_values = book["pm_id"].dropna().unique().tolist()
     else:
         pm_values = list(pm_ids)
+        missing = set(book["pm_id"].dropna().unique()) - set(pm_values)
+        if missing:
+            raise ValueError(f"pm_ids omits PMs present in the book: {sorted(missing)}")
     if len(set(pm_values)) != len(pm_values):
         raise ValueError("pm_ids must be unique")
     pm_values = sorted(pm_values)

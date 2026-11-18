@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mfl.attribution import attribute, attribute_pm_usage
+from mfl.attribution import attribute, attribute_pm_usage, pm_usage
 from mfl.margin import total_margin, validate_rates
 from mfl.optimise import optimise
 from tests.acceptance.test_a1_hand_worked import _market, _margin_subset
@@ -174,6 +174,23 @@ def test_a6c_pm_without_positions():
         two_pm.set_index("pm_id").sort_index(),
         actual.loc[["A", "B"]].sort_index(),
     )
+
+
+def test_a6c_pm_ids_omitting_book_pm_raises():
+    book, rates, providers, raw_params = _market()
+    params = _charge_params(raw_params)
+    book["pm_id"] = book["pm_id"].replace({"A": "PM01", "B": "PM02"})
+    weights = np.full((len(book), len(providers)), 1.0 / len(providers))
+
+    with pytest.raises(ValueError, match="omits"):
+        pm_usage(
+            book,
+            weights,
+            rates,
+            providers,
+            params,
+            pm_ids=["PM01"],
+        )
 
 
 def test_a6c_zero_denominator_with_margin_raises():
