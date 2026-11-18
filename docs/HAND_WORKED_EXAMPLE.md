@@ -2,6 +2,8 @@
 
 This example hand-traces the two fixed allocations in §6.1 of `prereg/PREREGISTRATION.md`. It is an arithmetic check of the margin and attribution rules; the stated placements define w for each case. Amounts are USD. The concentration threshold is recomputed from the gross that remains at each PB for the full book, each leave-one-out book, and each PM's solo margin.
 
+Toy numbers chosen for hand calculation; not market or provider data.
+
 ## Inputs and formulas
 
 - Buffer = 1.15; offset share φ = 0.60; concentration threshold θ = 0.25; concentration rate c = 0.02.
