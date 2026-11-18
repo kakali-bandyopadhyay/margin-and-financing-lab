@@ -9,13 +9,15 @@ description = "margin-and-financing-lab: prime-broker allocation under a transpa
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
+    "cvxpy>=1.6",
+    "highspy",
     "numpy>=1.26",
     "pandas>=2.1",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
-# step 3 (optimiser) adds: cvxpy, highspy; step 6 (report) adds: duckdb
+# step 6 (report) adds: duckdb
 
 [tool.setuptools.packages.find]
 where = ["src"]
