@@ -167,7 +167,8 @@ For each run, first check that input validation completed and that the solver st
 | D-05 – require complete PM coverage and check Euler total | [`e211dec`](../prereg/DEVIATIONS.md) |
 | D-06 – matched-product A7 check | [`85147fd`](../prereg/DEVIATIONS.md) |
 | Pre-registration | [`8f4dcbd`](../prereg/PREREGISTRATION.md) |
-| D-07 – A8 document-control test | Pending commit |
+| D-07 – A8 document-control test | [`c927356`](../prereg/DEVIATIONS.md) |
+| D-08 – input contract enforced at load | [`c927356`](../prereg/DEVIATIONS.md) |
 
 ## References
 
