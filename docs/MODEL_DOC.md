@@ -41,7 +41,7 @@ The loader reads nine CSV tables into DuckDB. The files are synthetic, and their
 | Price history | 9,669 | [`price_history.csv`](../data/raw/price_history.csv) |
 | Model parameters | 14 | [`params.csv`](../data/raw/params.csv) |
 
-At load, `io.py` checks that parameter names are complete and unique and that each value is in its permitted domain. It rejects non-positive base rates, φ outside [0, 1), θ outside (0, 1), negative c or liquidity premium, and any φ/θ/c mismatch between `params.csv` and its PB-level source file. It checks duplicate keys and requires a rate for every held product/tier at every PB. Product types must agree with their asset classes and issuer requirements; locate flags are restricted to product types that may require a locate; issuer references must exist; and only equity or credit issuers may be concentration-eligible. Position IDs and references must be valid, sides must be +1 or −1, notionals must be finite and positive, and liquidity tiers must be recognized. Held products need price history, and price-date keys must be unique. The loader also checks for a provenance tag on every source-table row and a tag for each parameter in SOURCES.md. Volatility buckets are derived from observed closes. The full input contract is in [pre-registration §2](../prereg/PREREGISTRATION.md#2-data-contract).
+At load, `io.py` checks that parameter names are complete and unique and that each value is in its permitted domain. It rejects non-positive base rates, φ outside [0, 1), θ outside (0, 1), negative c or liquidity premium, and any φ/θ/c mismatch between `params.csv` and its PB-level source file. It checks duplicate keys and requires a rate for every held product/tier at every PB. Product types must agree with their asset classes and issuer requirements; locate flags are restricted to product types that may require a locate; issuer references must exist; and only equity or credit issuers may be concentration-eligible. Position IDs and references must be valid, sides must be +1 or −1, notionals must be finite and positive, and liquidity tiers must be recognised. Held products need price history, and price-date keys must be unique. The loader also checks for a provenance tag on every source-table row and a tag for each parameter in SOURCES.md. Volatility buckets are derived from observed closes. The full input contract is in [pre-registration §2](../prereg/PREREGISTRATION.md#2-data-contract).
 
 The [provenance register](../data/SOURCES.md) records the synthetic generators, checks, assumptions and later data revisions. Its revision log explains the redraws to rates, positions and provider limits. A7 is the only public comparison; its ZN margin and settlement snapshot is in [`exchange_margin.csv`](../data/public/exchange_margin.csv), with source details in SOURCES §4. That comparison is a scale check, not a rate-setting exercise.
 
@@ -83,7 +83,7 @@ The solver status is checked. If the original problem is infeasible, a penalised
 
 For the primary usage measure, M3 removes one PM's positions while holding the optimal allocation w* fixed, then compares the reduced-book margin with full-book margin. A PM's usage can be negative when that PM's positions reduce overall modelled margin. This attribution does not re-optimise the remaining positions.
 
-The solo-margin amount for a PM is calculated on that PM's own positions at w*. M3 allocates the residual between total margin and summed usage in proportion to solo margins, then applies the pass-through rate and horizon factor to determine the illustrative charge. If the book is empty, all shares are zero; a zero solo-margin denominator in any other case is treated as an error. The re-optimized leave-one-out exhibit is reported separately and does not feed the charge. These definitions follow [pre-registration §5](../prereg/PREREGISTRATION.md#5-m3--pm-usage-and-illustrative-charge).
+The solo-margin amount for a PM is calculated on that PM's own positions at w*. M3 allocates the residual between total margin and summed usage in proportion to solo margins, then applies the pass-through rate and horizon factor to determine the illustrative charge. If the book is empty, all shares are zero; a zero solo-margin denominator in any other case is treated as an error. The re-optimised leave-one-out exhibit is reported separately and does not feed the charge. These definitions follow [pre-registration §5](../prereg/PREREGISTRATION.md#5-m3--pm-usage-and-illustrative-charge).
 
 ### 5.4 Exhibits
 
@@ -97,7 +97,7 @@ The report presents re-solved usage, all-in cost attribution and Euler allocatio
 | `src/mfl/optimise.py` | `optimise` | Solve the allocation LP and return diagnostics |
 | `src/mfl/attribution.py` | `attribute`, `pm_usage` | Calculate PM usage, residual allocation and charges |
 | `src/mfl/exhibits.py` | `resolve_usage`, `all_in_cost`, `euler_allocation` | Produce separate allocation and margin exhibits |
-| `src/mfl/io.py` | `load_case`, CSV writer | Load, validate and serialize case data |
+| `src/mfl/io.py` | `load_case`, CSV writer | Load, validate and serialise case data |
 | `src/mfl/report.py` | `build` | Create DuckDB report tables and the HTML report |
 | `src/mfl/cli.py` | `run`, `main` | Coordinate a run and handle failure reporting |
 | `sql/*.sql` | SQL views | Shape calculation outputs into report tables |
