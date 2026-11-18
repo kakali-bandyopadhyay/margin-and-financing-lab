@@ -1,4 +1,10 @@
-"""A2a–A2g: margin invariants on a small synthetic book."""
+"""A2a–A2g: margin invariants on a small synthetic book.
+
+M1 contract: w has shape (len(book), len(providers)); its columns follow
+providers["pb_id"] row order. Invalid shapes raise ValueError. Margin output
+includes every PB, including PBs with no positions. Null issuer IDs get no
+concentration add-on.
+"""
 
 from __future__ import annotations
 
@@ -41,9 +47,9 @@ def _fixture():
     return book, rates, providers, params
 
 
-def _draw_weights(seed: int, n_pos: int, n_pb: int) -> np.ndarray:
+def _draw_weights(seed: int, n_draws: int, n_pos: int, n_pb: int) -> np.ndarray:
     rng = np.random.default_rng(seed)
-    return rng.dirichlet(np.ones(n_pb), size=n_pos)
+    return rng.dirichlet(np.ones(n_pb), size=(n_draws, n_pos))
 
 
 def _margin(book, w, rates, providers, params):
@@ -59,15 +65,16 @@ def test_a2a_zero_at_zero_and_empty_book():
 
 def test_a2b_non_negative_on_1000_random_feasible_allocations():
     book, rates, providers, params = _fixture()
-    weights = _draw_weights(42, len(book), len(PBS))
-    assert np.allclose(weights.sum(axis=1), 1.0)
+    weights = _draw_weights(42, 1_000, len(book), len(PBS))
+    assert weights.shape == (1_000, len(book), len(PBS))
+    assert np.allclose(weights.sum(axis=2), 1.0)
     margins = [_margin(book, w, rates, providers, params) for w in weights]
     assert np.all(np.asarray(margins) >= 0.0)
 
 
 def test_a2c_monotone_in_position_size_without_opposite_side_in_family():
     book, rates, providers, params = _fixture()
-    w = _draw_weights(42, len(book), len(PBS))
+    w = _draw_weights(42, 1, len(book), len(PBS))[0]
     # EQ_ONLY is the only position in its product/tier/bucket family and is
     # conc-eligible under the sole corporate issuer, so scaling it cannot reduce M.
     target = book.index[book["pos_id"].eq("EQ_ONLY")][0]
@@ -80,7 +87,7 @@ def test_a2c_monotone_in_position_size_without_opposite_side_in_family():
 
 def test_a2d_monotone_in_volatility_bucket():
     book, rates, providers, params = _fixture()
-    w = _draw_weights(42, len(book), len(PBS))
+    w = _draw_weights(42, 1, len(book), len(PBS))[0]
     family_rows = book["product_id"].eq("EQ_HEDGE")
     margins = []
     for bucket in ("V1", "V2", "V3"):
@@ -105,7 +112,7 @@ def test_a2e_convexity_on_1000_random_feasible_pairs():
 
 def test_a2f_positive_homogeneity_in_notional():
     book, rates, providers, params = _fixture()
-    w = _draw_weights(42, len(book), len(PBS))
+    w = _draw_weights(42, 1, len(book), len(PBS))[0]
     base = _margin(book, w, rates, providers, params)
     assert base > 0.0
     for scale in (0.5, 2.0, 10.0):
@@ -118,8 +125,13 @@ def test_a2f_positive_homogeneity_in_notional():
 
 def test_a2g_seed_42_draw_and_outputs_are_deterministic():
     book, rates, providers, params = _fixture()
-    weights_first = _draw_weights(42, len(book), len(PBS))
-    weights_second = _draw_weights(42, len(book), len(PBS))
+    weights_first = _draw_weights(42, 1_000, len(book), len(PBS))
+    weights_second = _draw_weights(42, 1_000, len(book), len(PBS))
+    expected_shape = (1_000, len(book), len(PBS))
+    assert weights_first.shape == expected_shape
+    assert weights_second.shape == expected_shape
+    assert np.allclose(weights_first.sum(axis=2), 1.0)
+    assert np.allclose(weights_second.sum(axis=2), 1.0)
     np.testing.assert_array_equal(weights_first, weights_second)
     margins_first = np.array([_margin(book, w, rates, providers, params) for w in weights_first])
     margins_second = np.array([_margin(book, w, rates, providers, params) for w in weights_second])

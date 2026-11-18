@@ -1,4 +1,9 @@
-"""A1: hand-worked margin cases; charge checks wait for attribution step 4."""
+"""A1: hand-worked margin cases; charge checks wait for attribution step 4.
+
+Allocation-matrix columns follow providers["pb_id"] row order: X is column 0,
+Y is column 1. The M1 contract rejects w unless its shape is
+(len(book), len(providers)).
+"""
 
 from __future__ import annotations
 
