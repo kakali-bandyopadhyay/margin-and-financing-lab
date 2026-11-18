@@ -8,7 +8,7 @@
 | Date | 18 November 2026 |
 | Author | Kakali Bandyopadhyay |
 | Model ID | `mfl-phase1` |
-| Code commit | 2603261 |
+| Code commit | c927356 |
 | Status line | Status: not validated (see §12) |
 
 **Author's note:** Drafted with AI assistance; reviewed and edited by the author.
@@ -165,7 +165,7 @@ For each run, first check that input validation completed and that the solver st
 | D-03 – reject incomplete PM lists in usage | [`971fac2`](../prereg/DEVIATIONS.md) |
 | D-04 – exhibit tests and corrected Euler explanation | [`ed36c85`](../prereg/DEVIATIONS.md) |
 | D-05 – require complete PM coverage and check Euler total | [`e211dec`](../prereg/DEVIATIONS.md) |
-| D-06 – matched-product A7 check | [`b28fea6`](../prereg/DEVIATIONS.md) |
+| D-06 – matched-product A7 check | [`85147fd`](../prereg/DEVIATIONS.md) |
 | Pre-registration | [`8f4dcbd`](../prereg/PREREGISTRATION.md) |
 | D-07 – A8 document-control test | Pending commit |
 

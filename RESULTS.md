@@ -1,10 +1,10 @@
 # RESULTS – margin-and-financing-lab, primary run (seed 42)
 
-Run: `python -m mfl.cli run --seed 42` at commit `4fa2e37` · Python 3.14.7 · DuckDB 2.0.0 · HiGHS 1.16.0 · run timestamp 2026-11-18T16:18:39 UTC.  
+Run: `python -m mfl.cli run --seed 42` at commit `9b79274` · Python 3.14.7 · DuckDB 2.0.0 · HiGHS 1.16.0 · run timestamp 2026-11-18T16:18:39 UTC.  
 Tests at this commit: 81 passed (`python -m pytest -W error -q`); CI green.  
 Every number below is copied by script from the run's CSVs in `reports/run_42/` (`results/` and `tables/`); none are typed by hand. The primary run's outputs are committed in [`reports/run_42/`](reports/run_42/) (`run_meta.json`, `report.html`, `results/`, `tables/`); rerunning the command above regenerates them. Model, parameters and expected behaviour were fixed in advance in [`prereg/PREREGISTRATION.md`](prereg/PREREGISTRATION.md); departures are in [`prereg/DEVIATIONS.md`](prereg/DEVIATIONS.md). How to read these numbers, and what they are not, is in [`docs/MODEL_DOC.md`](docs/MODEL_DOC.md). Synthetic data; illustrative charge policy; not validated.
 
-Reproducibility: this run's 26 output CSVs are byte-identical to an earlier run of the same data at commit `ddc2f32` (the commits in between changed load-time validation in `io.py`, report display in `report.py`, documentation and tests; M1–M3 and exhibit code are unchanged).
+Reproducibility: this run's 26 output CSVs are byte-identical to an earlier run of the same data at commit `c8f0dfd` (the commits in between changed load-time validation in `io.py`, report display in `report.py`, documentation and tests; M1–M3 and exhibit code are unchanged).
 
 ## 1. Primary run – headline
 
@@ -100,7 +100,7 @@ PBs whose margin sits at the counterparty limit, by scenario – base: PB_B; bas
 
 Product `IRSF_10Y` against CBOT ZNZ26 (outright non-HRP initial, 1,875 USD per contract, settlement 105.609375, multiplier 1,000; effective 2026-11-17, accessed 2026-11-18; [`data/public/exchange_margin.csv`](data/public/exchange_margin.csv)). Exchange initial margin = 1.775% of notional. Ratio = proxy margin as % of notional ÷ exchange margin as % of notional, for one position held in full at each PB. The band 0.5–4.0 was fixed before the CME figure was checked (D-06).
 
-Ratios printed by `python -m pytest tests/acceptance/test_a7_exchange_sanity.py -s -q` at `4fa2e37` (1 passed):
+Ratios printed by `python -m pytest tests/acceptance/test_a7_exchange_sanity.py -s -q` at `9b79274` (1 passed):
 
 | PB | Proxy ÷ exchange | Inside 0.5–4.0 |
 |---|---|---|
