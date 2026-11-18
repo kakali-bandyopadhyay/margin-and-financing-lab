@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 import duckdb
+import numpy as np
 import pandas as pd
 
 from .io import Case, write_csv
@@ -35,26 +36,37 @@ def _boundary() -> str:
     return match.group(0).replace("**", "")
 
 
-def _fmt(value: object, column: str) -> str:
+def _fmt(value: object, column: str, dtype: object) -> str:
     if pd.isna(value):
         return ""
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        if column.endswith("pct") or column in {"share", "offset_ratio"}:
-            return f"{value:,.2f}%" if column.endswith("pct") else f"{value:,.2f}"
-        if column.endswith("usd") or column.endswith("_usd") or column in {"r", "phi"}:
-            return f"{value:,.2f}"
-        return f"{value:,.2f}"
-    if isinstance(value, bool):
+    if isinstance(value, (bool, np.bool_)):
         return "Yes" if value else "No"
+    if isinstance(value, (int, float, np.integer, np.floating)):
+        if pd.api.types.is_integer_dtype(dtype) or column.endswith("_count"):
+            return f"{int(value):,}"
+        if column in {"r", "phi", "conc_rate"}:
+            return f"{value:,.4f}"
+        if column in {"share", "offset_ratio", "issuer_share_pb_gross"}:
+            return f"{value * 100:,.2f}%"
+        if column.endswith("_pct"):
+            return f"{value:,.2f}%"
+        return f"{value:,.2f}"
     return str(value)
 
 
 def _table(frame: pd.DataFrame) -> str:
-    headers = "".join(f"<th>{html.escape(str(c))}</th>" for c in frame.columns)
+    numeric = {
+        column: pd.api.types.is_numeric_dtype(dtype) and not pd.api.types.is_bool_dtype(dtype)
+        for column, dtype in frame.dtypes.items()
+    }
+    headers = "".join(
+        f'<th class="{"num" if numeric[column] else "text"}">{html.escape(str(column))}</th>'
+        for column in frame.columns
+    )
     body = []
     for row in frame.itertuples(index=False, name=None):
         cells = "".join(
-            f'<td class="num">{html.escape(_fmt(value, str(col)))}</td>'
+            f'<td class="{"num" if numeric[col] else "text"}">{html.escape(_fmt(value, str(col), frame[col].dtype))}</td>'
             for col, value in zip(frame.columns, row, strict=True)
         )
         body.append(f"<tr>{cells}</tr>")
@@ -94,8 +106,8 @@ def build(run_dir: Path, case: Case) -> None:
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>margin-and-financing-lab – run report</title>"
         "<style>body{font:13px system-ui,sans-serif;max-width:1280px;margin:32px auto;padding:0 20px;color:#20242a}"
         "h1,h2{font-weight:600}section{margin:30px 0}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}"
-        "th,td{padding:7px 9px;border-bottom:1px solid #d9dde2;text-align:left}th{background:#f1f3f5}"
-        "tbody tr:nth-child(even){background:#f8f9fa}.num{text-align:right}.note{font-style:italic;color:#555}footer{margin-top:38px;color:#555}</style></head><body>"
+        "th,td{padding:7px 9px;border-bottom:1px solid #d9dde2}th{background:#f1f3f5}"
+        "tbody tr:nth-child(even){background:#f8f9fa}.num{text-align:right}.text{text-align:left}.note{font-style:italic;color:#555}footer{margin-top:38px;color:#555}</style></head><body>"
         f"<h1>margin-and-financing-lab – run report (seed {seed})</h1><p>{html.escape(_boundary())}</p>"
         f"<section><h2>Run summary</h2>{summary_html}</section>{''.join(rendered)}"
         "<footer>Synthetic data. Illustrative charge policy. Not validated.</footer></body></html>"

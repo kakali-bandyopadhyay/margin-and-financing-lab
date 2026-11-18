@@ -100,3 +100,18 @@ def test_p10_sensitivity_scenarios(run_output):
     assert set(data["status"].notna()) == {True}
     for column in ("objective_usd", "financing_usd", "margin_funding_usd", "total_margin_usd", "total_charge_usd"):
         assert data.loc["ell_100", column] == pytest.approx(data.loc["base", column], abs=1e-6)
+
+
+def test_p11_report_cell_alignment_and_precision(run_output):
+    _, run_dir = run_output
+    report = (run_dir / "report.html").read_text(encoding="utf-8")
+    attribution = pd.read_csv(run_dir / "results" / "attribution.csv")
+    pm_id = attribution.iloc[0]["pm_id"]
+    assert f'<td class="text">{pm_id}</td>' in report
+    assert '<td class="text">net</td><td class="num">40</td>' in report
+
+    family = pd.read_csv(run_dir / "tables" / "21_margin_by_family.csv")
+    r_value = family.iloc[0]["r"]
+    r_text = f"{r_value:,.4f}"
+    family_section = report.split('<h2>Margin by family</h2>', 1)[1].split("</section>", 1)[0]
+    assert f'<td class="num">{r_text}</td>' in family_section
