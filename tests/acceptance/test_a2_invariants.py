@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mfl.margin import total_margin
+from mfl.margin import build_index, total_margin
 
 
 PBS = ("PB_A", "PB_B", "PB_C")
@@ -52,8 +52,8 @@ def _draw_weights(seed: int, n_draws: int, n_pos: int, n_pb: int) -> np.ndarray:
     return rng.dirichlet(np.ones(n_pb), size=(n_draws, n_pos))
 
 
-def _margin(book, w, rates, providers, params):
-    return total_margin(book, w, rates, providers, params)
+def _margin(book, w, rates, providers, params, index=None):
+    return total_margin(book, w, rates, providers, params, index=index)
 
 
 def test_a2a_zero_at_zero_and_empty_book():
@@ -65,10 +65,11 @@ def test_a2a_zero_at_zero_and_empty_book():
 
 def test_a2b_non_negative_on_1000_random_feasible_allocations():
     book, rates, providers, params = _fixture()
+    index = build_index(book, providers, rates, params["vol_multipliers"])
     weights = _draw_weights(42, 1_000, len(book), len(PBS))
     assert weights.shape == (1_000, len(book), len(PBS))
     assert np.allclose(weights.sum(axis=2), 1.0)
-    margins = [_margin(book, w, rates, providers, params) for w in weights]
+    margins = [_margin(book, w, rates, providers, params, index=index) for w in weights]
     assert np.all(np.asarray(margins) >= 0.0)
 
 
@@ -99,14 +100,18 @@ def test_a2d_monotone_in_volatility_bucket():
 
 def test_a2e_convexity_on_1000_random_feasible_pairs():
     book, rates, providers, params = _fixture()
+    index = build_index(book, providers, rates, params["vol_multipliers"])
     rng = np.random.default_rng(42)
     n_pos, n_pb = len(book), len(PBS)
     for _ in range(1_000):
         w_a = rng.dirichlet(np.ones(n_pb), size=n_pos)
         w_b = rng.dirichlet(np.ones(n_pb), size=n_pos)
         midpoint = (w_a + w_b) / 2.0
-        lhs = _margin(book, midpoint, rates, providers, params)
-        rhs = (_margin(book, w_a, rates, providers, params) + _margin(book, w_b, rates, providers, params)) / 2.0
+        lhs = _margin(book, midpoint, rates, providers, params, index=index)
+        rhs = (
+            _margin(book, w_a, rates, providers, params, index=index)
+            + _margin(book, w_b, rates, providers, params, index=index)
+        ) / 2.0
         assert lhs <= rhs + 1e-6
 
 
@@ -125,6 +130,7 @@ def test_a2f_positive_homogeneity_in_notional():
 
 def test_a2g_seed_42_draw_and_outputs_are_deterministic():
     book, rates, providers, params = _fixture()
+    index = build_index(book, providers, rates, params["vol_multipliers"])
     weights_first = _draw_weights(42, 1_000, len(book), len(PBS))
     weights_second = _draw_weights(42, 1_000, len(book), len(PBS))
     expected_shape = (1_000, len(book), len(PBS))
@@ -133,6 +139,10 @@ def test_a2g_seed_42_draw_and_outputs_are_deterministic():
     assert np.allclose(weights_first.sum(axis=2), 1.0)
     assert np.allclose(weights_second.sum(axis=2), 1.0)
     np.testing.assert_array_equal(weights_first, weights_second)
-    margins_first = np.array([_margin(book, w, rates, providers, params) for w in weights_first])
-    margins_second = np.array([_margin(book, w, rates, providers, params) for w in weights_second])
+    margins_first = np.array(
+        [_margin(book, w, rates, providers, params, index=index) for w in weights_first]
+    )
+    margins_second = np.array(
+        [_margin(book, w, rates, providers, params, index=index) for w in weights_second]
+    )
     np.testing.assert_array_equal(margins_first, margins_second)

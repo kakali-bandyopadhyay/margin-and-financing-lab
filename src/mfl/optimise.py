@@ -401,7 +401,7 @@ def optimise(
         raise RuntimeError(f"optimisation failed with status {solver_status}")
 
     weights = np.clip(np.asarray(solved["w"].value, dtype=float), 0.0, None)
-    reported_margin = margin_by_pb(book, weights, rates, providers, params)
+    reported_margin = margin_by_pb(book, weights, rates, providers, params, index=index)
     solver_margin = np.asarray(solved["margin"].value, dtype=float).reshape(-1)
     if solver_status == cp.OPTIMAL:
         financing_usd = float(np.sum(notional[:, None] * weights * k) * funding_scale)

@@ -311,15 +311,91 @@ def _evaluate(
     )
 
 
+def _margin_vector(
+    book: pd.DataFrame,
+    w: np.ndarray,
+    rates: pd.DataFrame,
+    providers: pd.DataFrame,
+    params: object,
+    index: Index | None = None,
+) -> np.ndarray:
+    """Compute buffered margin by PB with NumPy, optionally reusing an index.
+
+    A supplied index must be built from the same book rows and volatility
+    buckets, rates, and providers. It may be reused when only notionals change;
+    changes to rows or buckets require rebuilding it.
+    """
+    if not isinstance(book, pd.DataFrame):
+        raise TypeError("book must be a pandas DataFrame")
+    if not isinstance(providers, pd.DataFrame):
+        raise TypeError("providers must be a pandas DataFrame")
+    if not {"pb_id", "conc_threshold", "conc_rate"}.issubset(providers.columns):
+        raise ValueError("providers must contain pb_id, conc_threshold, and conc_rate")
+    pb_ids = _provider_ids(providers)
+    if index is None:
+        multipliers = _mapping(params, "vol_multipliers")
+        index = build_index(book, providers, rates, multipliers)
+    else:
+        if index.pb_ids != pb_ids:
+            raise ValueError("prebuilt index PB order does not match providers")
+        if index.r is None or index.phi is None:
+            raise ValueError("prebuilt index must include r and phi arrays")
+        expected_rate_shape = (len(book), len(pb_ids))
+        if index.r.shape != expected_rate_shape or index.phi.shape != expected_rate_shape:
+            raise ValueError(
+                f"prebuilt index rate arrays must have shape {expected_rate_shape}"
+            )
+
+    weights = np.asarray(w, dtype=float)
+    expected_shape = (len(book), len(pb_ids))
+    if weights.shape != expected_shape:
+        raise ValueError(f"w must have shape {expected_shape}; received {weights.shape}")
+    if not np.isfinite(weights).all():
+        raise ValueError("w must contain only finite values")
+    required_book = {"notional_usd", "side"}
+    missing = required_book.difference(book.columns)
+    if missing:
+        raise ValueError(f"book is missing required columns: {', '.join(sorted(missing))}")
+
+    notionals = book["notional_usd"].to_numpy(dtype=float)
+    sides = book["side"].to_numpy(dtype=float)
+    exposure = notionals[:, None] * weights
+    signed_exposure = (sides * notionals)[:, None] * weights
+    family_margin_by_pb = np.zeros(len(pb_ids), dtype=float)
+    assert index.r is not None and index.phi is not None
+    for rows in index.family_rows:
+        r0 = index.r[rows[0]]
+        phi0 = index.phi[rows[0]]
+        family_margin_by_pb += r0 * (
+            phi0 * np.abs(signed_exposure[rows].sum(axis=0))
+            + (1.0 - phi0) * exposure[rows].sum(axis=0)
+        )
+
+    pb_gross = exposure.sum(axis=0)
+    provider_theta = providers["conc_threshold"].to_numpy(dtype=float)
+    provider_conc_rate = providers["conc_rate"].to_numpy(dtype=float)
+    addon_by_pb = np.zeros(len(pb_ids), dtype=float)
+    for rows in index.issuer_rows:
+        issuer_gross = exposure[rows].sum(axis=0)
+        addon_by_pb += provider_conc_rate * np.maximum(
+            0.0, issuer_gross - provider_theta * pb_gross
+        )
+
+    house_buffer = float(_mapping(params, "house_buffer"))
+    return house_buffer * (family_margin_by_pb + addon_by_pb)
+
+
 def margin_by_pb(
     book: pd.DataFrame,
     w: np.ndarray,
     rates: pd.DataFrame,
     providers: pd.DataFrame,
     params: object,
+    index: Index | None = None,
 ) -> pd.DataFrame:
-    """Return one row per PB with its buffered margin in USD."""
-    return _evaluate(book, w, rates, providers, params)[0]
+    """Return buffered margin by PB; a matching prebuilt index may be reused."""
+    values = _margin_vector(book, w, rates, providers, params, index=index)
+    return pd.DataFrame({"pb_id": _provider_ids(providers), "margin_usd": values})
 
 
 def total_margin(
@@ -328,10 +404,10 @@ def total_margin(
     rates: pd.DataFrame,
     providers: pd.DataFrame,
     params: object,
+    index: Index | None = None,
 ) -> float:
-    """Return total buffered margin across all prime brokers."""
-    by_pb = margin_by_pb(book, w, rates, providers, params)
-    return float(by_pb["margin_usd"].sum())
+    """Return total buffered margin, reusing an optional matching index."""
+    return float(_margin_vector(book, w, rates, providers, params, index=index).sum())
 
 
 def margin_detail(

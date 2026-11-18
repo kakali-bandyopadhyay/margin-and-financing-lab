@@ -7,3 +7,9 @@ Each entry: date · what changed · why · effect on results · commit.
 - Why: a pre-run feasibility check on the synthetic data showed financing spreads dominate the objective at ℓ = 100 bps, so margin shapes the allocation mainly through counterparty limits. Varying ℓ shows when margin cost starts to move the allocation.
 - Effect: additional exhibit only; primary run, tests and charge unchanged. Decided before any model code or results.
 - Commit: (this commit)
+
+## D-02 · 2026-11-18 · Margin evaluation speed: prebuilt index (refactor + A2 test runtime)
+- What: `margin.py` `margin_by_pb` and `total_margin` accept an optional prebuilt `index` (from `build_index`) and compute M(p) with NumPy only; `margin_detail` unchanged. A2b, A2e and A2g build the index once and pass it; `optimise.py` passes the index it already builds.
+- Why: every margin call rebuilt the rate index with pandas merges (~12 ms per call); the acceptance suite took ~110 s.
+- Effect: no change to formulas, parameters, draws, tolerances or assertions. A1 unchanged to the cent; A5 ℓ = 100 objective unchanged (21,714,337.24). Suite runtime ~110 s → ~3 s.
+- Commit: (this commit)
