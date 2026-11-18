@@ -1,5 +1,7 @@
 # margin-and-financing-lab
 
+[![CI](https://github.com/kakali-bandyopadhyay/margin-and-financing-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/kakali-bandyopadhyay/margin-and-financing-lab/actions/workflows/ci.yml)
+
 **Boundary.** This is a personal build on synthetic data. It is not a portfolio-margin model and is not calibrated to any prime broker, exchange or clearing house: the margin proxy uses stated rates, volatility buckets and a simple per-broker offset rule, so offsets are approximated. The internal charge policy is illustrative. Outputs describe how the model behaves under its stated assumptions; they are not predictions, not any firm's methodology, and the model is not validated. Any production use would need independent model validation and Treasury, Risk and Legal review.
 
 ## What it does

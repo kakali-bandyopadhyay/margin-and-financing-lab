@@ -48,4 +48,4 @@ Every number the model uses carries one tag: **source** (public citation with da
 ## 4. Public sources (sanity check A7 only)
 | Item | Source | Date accessed | Value | Used for |
 |---|---|---|---|---|
-| Published exchange margin for one matched product | | | | A7 sanity band – not calibration |
+| CBOT ZN Dec-26 outright non-HRP initial margin and settlement | CME Group ZN margins and settlements pages | 2026-11-18 | Initial $1,875; maintenance $1,875; settle 105.609375 (105'19.5); multiplier $1,000/point; margin snapshot/effective date 2026-11-17 | A7 sanity band – not calibration |

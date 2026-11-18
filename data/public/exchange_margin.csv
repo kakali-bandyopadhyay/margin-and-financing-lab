@@ -1,0 +1,2 @@
+product_id,exchange,contract,margin_type,initial_margin_usd,settle_price,multiplier,effective_date,accessed_date,source_url
+IRSF_10Y,CBOT,ZNZ26,outright non-HRP initial,1875,105.609375,1000,2026-11-17,2026-11-18,https://www.cmegroup.com/markets/interest-rates/us-treasury/10-year-us-treasury-note/margins; https://www.cmegroup.com/markets/interest-rates/us-treasury/10-year-us-treasury-note/settlements

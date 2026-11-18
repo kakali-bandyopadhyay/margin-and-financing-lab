@@ -8,6 +8,12 @@ Each entry: date · what changed · why · effect on results · commit.
 - Effect: additional exhibit only; primary run, tests and charge unchanged. Decided before any model code or results.
 - Commit: (this commit)
 
+## D-06 · 2026-11-18 · A7 matched-product exchange-margin sanity check
+- What: A7 compares IRSF_10Y with the CBOT 10-Year T-Note futures front contract ZNZ26 using the preselected proxy-to-exchange margin ratio band 0.5–4.0. The CME non-HRP outright initial margin is 100% of maintenance; the 2026-11-17 CME margin snapshot lists maintenance at $1,875. The same-day CME settlement is 105'19.5 (105.609375), with a $1,000-per-point multiplier.
+- Why: a wide sanity band catches unit and scale errors; it is not calibration. The band was fixed before checking the CME figure. An indicative broker-reported $2,062.50 figure seen earlier was disclosed and was not used as the exchange margin.
+- Effect: test only; no model rates or primary results change.
+- Commit: (this commit)
+
 ## D-02 · 2026-11-18 · Margin evaluation speed: prebuilt index (refactor + A2 test runtime)
 - What: `margin.py` `margin_by_pb` and `total_margin` accept an optional prebuilt `index` (from `build_index`) and compute M(p) with NumPy only; `margin_detail` unchanged. A2b, A2e and A2g build the index once and pass it; `optimise.py` passes the index it already builds.
 - Why: every margin call rebuilt the rate index with pandas merges (~12 ms per call); the acceptance suite took ~110 s.
