@@ -110,7 +110,6 @@ def test_a1_hand_worked_margin(case, allocation, expected_by_pb, expected_usage,
     assert residual == pytest.approx(expected_residual, abs=0.005)
 
 
-@pytest.mark.skip(reason="attribution.py – step 4")
 @pytest.mark.parametrize(
     ("usage", "solo", "total_margin_usd", "expected_share", "expected_charge"),
     [
