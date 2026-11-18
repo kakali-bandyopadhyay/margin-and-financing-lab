@@ -300,3 +300,10 @@ def test_x3f_euler_is_homogeneous_in_notional(real_case, scale):
         atol=1e-9 * margin_total,
         rtol=0.0,
     )
+
+
+def test_x3g_euler_rejects_omitted_book_pm():
+    book, rates, providers, params = _market()
+    weights = np.array([[1.0, 0.0], [1.0, 0.0], [1.0, 0.0]])
+    with pytest.raises(ValueError, match="omits"):
+        euler_allocation(book, weights, rates, providers, params, pm_ids=["A"])

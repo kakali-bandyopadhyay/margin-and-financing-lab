@@ -51,7 +51,6 @@ def resolve_usage(
     for pm_id in sorted(book["pm_id"].dropna().unique().tolist()):
         keep = book["pm_id"].ne(pm_id).to_numpy()
         remaining = book.loc[keep].reset_index(drop=True)
-        remaining_w = base.w[keep, :]
         solved = optimise(remaining, rates, providers, borrow, params)
         if solved.status != "optimal":
             raise RuntimeError(f"re-solve without {pm_id} returned {solved.status}")
@@ -186,6 +185,9 @@ def euler_allocation(
         pm_values = book["pm_id"].dropna().unique().tolist()
     else:
         pm_values = list(pm_ids)
+        missing = set(book["pm_id"].dropna().unique()) - set(pm_values)
+        if missing:
+            raise ValueError(f"pm_ids omits PMs present in the book: {sorted(missing)}")
     if len(set(pm_values)) != len(pm_values):
         raise ValueError("pm_ids must be unique")
     pm_values = sorted(pm_values)
@@ -297,5 +299,11 @@ def euler_allocation(
         kink_records,
         columns=["kind", "key", "pb_id", "size_usd", "value_usd"],
     )
+    margin_total = total_margin(book, weights, rates, providers, params, index=index)
+    euler_total = float(per_pm["euler_usd"].sum())
+    if abs(euler_total - margin_total) > 1e-6 * max(1.0, abs(margin_total)):
+        raise RuntimeError(
+            f"Euler contributions {euler_total} do not sum to margin {margin_total}"
+        )
     return per_pm, kinks
 

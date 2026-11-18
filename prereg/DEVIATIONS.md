@@ -25,3 +25,9 @@ Each entry: date · what changed · why · effect on results · commit.
 - Why: the original statement is mathematically inexact; the tests pin the corrected behaviour.
 - Effect: none on the primary usage, residual, or charge; exhibit content as pre-registered (kinks still reported).
 - Commit: (this commit)
+
+## D-05 · 2026-11-18 · Euler exhibit: reject omitted PMs and check total
+- What: `euler_allocation` raises ValueError when explicit `pm_ids` omit a PM present in the book and checks that reported Euler values sum to M; an acceptance test covers the omitted-PM case.
+- Why: like the D-03 usage gap, an omitted PM's Euler contribution could silently disappear from the per-PM exhibit. The total check guards the exhibit decomposition.
+- Effect: no change to reported numbers; the primary run includes every PM and continues to match M.
+- Commit: (this commit)
