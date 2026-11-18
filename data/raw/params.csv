@@ -1,0 +1,15 @@
+name,value
+as_of_date,2026-10-30
+horizon_days,90
+liquidity_premium_bps,100
+house_buffer,1.15
+pass_through_bps,100
+phi,0.60
+conc_threshold,0.25
+conc_rate,0.02
+vol_cut_low,0.10
+vol_cut_high,0.20
+vol_mult_v1,1.0
+vol_mult_v2,1.3
+vol_mult_v3,1.8
+seed,42

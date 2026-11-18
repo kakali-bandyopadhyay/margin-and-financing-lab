@@ -1,0 +1,41 @@
+%%{init: {'themeVariables': {'fontSize': '14px'}}}%%
+flowchart LR
+  IN1["Positions (synthetic book)"]
+  IN2["Prime-broker terms (rates, spreads, borrow, capacity, limits)"]
+  IN3["Price history → 60-day vol bucket"]
+
+  subgraph P1["Phase 1"]
+    M1["1. Margin proxy – per-broker netting, concentration add-on, 1.15 buffer"]
+    M2["2. Allocation optimiser – LP, min financing + borrow + margin funding cost"]
+    M3["3. PM usage and charge – fixed-allocation leave-one-out"]
+    M4["4. Report + SQL views + model document"]
+  end
+
+  subgraph P2["Phase 2"]
+    M5["5. Fixed-horizon stress – vol shock, haircut hike, broker tightens terms"]
+    M6["6. Calibration exercise – synthetic statements"]
+  end
+
+  EXT["vol-forecast-lab forecast (input file)"]
+
+  IN1 --> M1
+  IN2 --> M1
+  IN3 --> M1
+  IN2 --> M2
+  M1 -->|"margin as cost"| M2
+  M2 -->|"optimal allocation"| M3
+  M1 --> M3
+  M2 --> M4
+  M3 --> M4
+  M2 -.-> M5
+  EXT -.-> M5
+  M1 -.->|"parameters to recover"| M6
+
+  classDef input fill:#ffffff,stroke:#555,color:#000
+  classDef phase1 fill:#e7f1fb,stroke:#2d6cb5,color:#000
+  classDef phase2 fill:#f0efec,stroke:#8a8a8a,stroke-dasharray:5 5,color:#000
+  classDef external fill:#ffffff,stroke:#555,stroke-dasharray:5 5,color:#000
+  class IN1,IN2,IN3 input
+  class M1,M2,M3,M4 phase1
+  class M5,M6 phase2
+  class EXT external
