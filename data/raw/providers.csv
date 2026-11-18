@@ -1,0 +1,5 @@
+pb_id,capacity_usd,counterparty_limit_usd,conc_threshold,conc_rate,lockup_days,notice_days,nav_trigger_pct
+PB_A,3487260000,702211981,0.25,0.02,45,90,22.5
+PB_B,1946380000,211730389,0.25,0.02,21,45,17.8
+PB_C,2763915000,469178660,0.25,0.02,67,172,36.4
+PB_D,3948127000,831912324,0.25,0.02,84,126,29.1

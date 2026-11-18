@@ -1,0 +1,11 @@
+pm_id,strategy,asset_class_focus
+PM01,equity long/short,Equity - Technology
+PM02,equity long/short,Equity - Healthcare
+PM03,equity long/short,Equity - Financials
+PM04,equity long/short,Equity - Industrials
+PM05,equity market-neutral,Equity - multi-sector
+PM06,credit long/short,Credit - high yield
+PM07,credit long/short,Credit - stressed/distressed
+PM08,rates relative value,Rates - government curves
+PM09,global macro,FX + Rates + Commodities
+PM10,commodities,Commodities - energy & metals

@@ -5,14 +5,20 @@ Every number the model uses carries one tag: **source** (public citation with da
 ## 1. Synthetic tables (data/raw/)
 | File | Generator | Date | Prompt / script | Rows | Checks passed | Tag |
 |---|---|---|---|---|---|---|
-| pms.csv | DeepSeek | | | | | assumed – synthetic |
-| issuers.csv | DeepSeek | | | | | assumed – synthetic |
-| products.csv | DeepSeek | | | | | assumed – synthetic |
-| providers.csv | DeepSeek | | | | | assumed – synthetic |
-| price_history.csv | DeepSeek script (seeded) | | | | | assumed – synthetic |
-| positions.csv | DeepSeek | | | | | assumed – synthetic |
-| pb_rates.csv | DeepSeek | | | | | assumed – synthetic |
-| pb_borrow.csv | DeepSeek | | | | | assumed – synthetic |
+| pms.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B | 10 | structure + realism (Claude) | assumed – synthetic |
+| issuers.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B | 44 | structure + realism (Claude) | assumed – synthetic |
+| products.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B | 77 | structure + realism (Claude) | assumed – synthetic |
+| providers.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B + fix C | 4 | structure + realism (Claude) | assumed – synthetic |
+| price_history.csv | DeepSeek script (seeded) | 2026-11-18 | DeepSeek prompts A/B | 9,669 | structure + realism (Claude) | assumed – synthetic |
+| positions.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B + fix C | 214 | structure + realism (Claude) | assumed – synthetic |
+| pb_rates.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B + fix C | 924 | structure + realism (Claude) | assumed – synthetic |
+| pb_borrow.csv | DeepSeek | 2026-11-18 | DeepSeek prompts A/B | 176 | structure + realism (Claude) | assumed – synthetic |
+
+### Revision log
+| Date | File | Change | Reason |
+|---|---|---|---|
+| 2026-11-18 | providers, positions, pb_rates | DeepSeek fix C: counterparty limits re-drawn; liquidity tier set from the PM's total position per (PM, product, side); equity/govt-bond rates re-drawn so the cheapest-margin PB differs from the cheapest-financing PB; L1 < L2 < L3 spreads | A/B check: limits below estimated book margin; tiers set per lot; no margin-vs-financing trade-off; 14 spread-order breaks |
+| 2026-11-18 | providers | counterparty_limit_usd × 1.25 (applied by Claude after an LP feasibility check) | at fix-C limits the minimum achievable margin used 98% of total limits (3 of 4 binding); ×1.25 leaves one binding limit (PB_B) |
 
 ## 2. Coefficient ranges used in generation
 | Coefficient | Range given to the generator | Tag | Reason |
