@@ -1,0 +1,6 @@
+%%{init: {"theme": "base", "fontFamily": "Arial, Helvetica, sans-serif", "themeVariables": {"fontFamily": "Arial, sans-serif", "fontSize": "16px"}, "flowchart": {"htmlLabels": false, "curve": "linear", "useMaxWidth": false, "wrappingWidth": 400, "rankSpacing": 24, "nodeSpacing": 30}}}%%
+flowchart TB
+    book["Synthetic book + prime-broker terms"] --> margin["1 Margin proxy"]
+    margin --> allocation["2 Allocation (LP)"]
+    allocation --> attribution["3 PM usage and charge"]
+    attribution --> report["DuckDB report + model document"]

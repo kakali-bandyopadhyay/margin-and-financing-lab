@@ -1,0 +1,13 @@
+%%{init: {"theme": "base", "fontFamily": "Arial, Helvetica, sans-serif", "themeVariables": {"fontFamily": "Arial, sans-serif", "fontSize": "30px"}, "flowchart": {"htmlLabels": false, "curve": "linear", "wrappingWidth": 400, "nodeSpacing": 40, "rankSpacing": 40, "useMaxWidth": false}}}%%
+flowchart TB
+    subgraph top[" "]
+        direction LR
+        book["Book + broker terms"] --> margin["Margin proxy"]
+    end
+    subgraph bottom[" "]
+        direction LR
+        allocation["Allocation (LP)"] --> attribution["PM attribution"]
+    end
+    top --> bottom
+    style top fill:none,stroke:none
+    style bottom fill:none,stroke:none
