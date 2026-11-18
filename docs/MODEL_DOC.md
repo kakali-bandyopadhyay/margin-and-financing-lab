@@ -8,7 +8,7 @@
 | Date | 18 November 2026 |
 | Author | Kakali Bandyopadhyay |
 | Model ID | `mfl-phase1` |
-| Code commit | Pending D-08 implementation commit |
+| Code commit | 2603261 |
 | Status line | Status: not validated (see §12) |
 
 **Author's note:** Drafted with AI assistance; reviewed and edited by the author.
