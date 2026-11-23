@@ -194,7 +194,7 @@ These are the Phase 2b outputs, reported as found. The exercise uses illustrativ
 | HYG | Tiingo | adjClose | 2015-01-02 | 2026-10-30 | 2,975 | identical |
 | SPY | Tiingo | adjClose | 2015-01-02 | 2026-10-30 | 2,975 | identical |
 
-All five local raw files have SHA-256 digests identical to the committed input digest. Reproduction status (§1.4): pending the clean-clone run.
+All five local raw files have SHA-256 digests identical to the committed input digest. Reproduction status (§1.4): reproduced byte-identical on a clean clone, 23 Nov 2026 (commit 0e2a37e): all five raw-input digests identical; every reports/calib_42 file identical after re-running the calibrate CLI.
 
 ### Calibration targets
 
