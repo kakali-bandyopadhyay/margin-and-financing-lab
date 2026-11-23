@@ -139,7 +139,7 @@ The planned grid changes volatility buckets by one step, scales base rates by 1.
 1. Margin is estimated with linear rates, not SPAN, TIMS or VaR portfolio margin; offsets are limited to one family at one PB.
 2. Volatility classification uses absolute thresholds on 60 returns; asset-class variation is represented by base rates (D1).
 3. Phase 1 assigns common φ, θ and c values across PBs, although the schema can represent PB-level differences (C1).
-4. The calculation is static over one horizon: it has no intraday or path-dependent margin and no margin-call dynamics. Stress modelling is deferred to Phase 2.
+4. Phase 2a adds static prime-broker margin stress only; it has no cleared or exchange margin, path dependence or margin-call dynamics.
 5. Fixed fees, minimum balances and account activation are absent; adding them calls for a mixed-integer formulation.
 6. Constraint duals indicate local sensitivities, but may not be unique when the solution is degenerate.
 7. Euler allocations have no unique PM split at kinks. Final net and hinge counts should be read from [RESULTS.md](../RESULTS.md).

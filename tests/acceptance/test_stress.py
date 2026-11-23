@@ -289,6 +289,8 @@ def test_scenario_inputs_materialise_fixed_transforms(stress_case):
     assert st4.terminated_pb == "PB_D"
     assert st4.cost_window_start == "2027-03-05"
     assert st4.top_two == ("PB_D", "PB_A")
+    assert st4.notional_to_move_usd == pytest.approx(st3.notional_to_move_usd)
+    assert st4.positions_moved == st3.positions_moved == 106
     pd.testing.assert_series_equal(
         st4.book["vol_bucket"], st1a.book["vol_bucket"], check_names=False
     )
@@ -392,6 +394,7 @@ def test_s6_written_csvs_identity_and_row_counts(stress_case, tmp_path):
             ) <= 1e-6
 
     st3 = summary.set_index("scenario").loc["ST3"]
+    st4 = summary.set_index("scenario").loc["ST4"]
     moved_from_terminated = moves[
         moves["scenario"].eq("ST3")
         & moves["from_pb"].eq(st3["terminated_pb"])
@@ -399,6 +402,16 @@ def test_s6_written_csvs_identity_and_row_counts(stress_case, tmp_path):
     assert float(moved_from_terminated) == pytest.approx(
         float(st3["notional_to_move_usd"]), rel=0.0, abs=1e-6
     )
+    assert float(st4["notional_to_move_usd"]) == pytest.approx(
+        float(st3["notional_to_move_usd"]), rel=0.0, abs=1e-6
+    )
+    assert float(st4["notional_to_move_usd"]) == pytest.approx(
+        2_912_025_250.525632, rel=1e-12
+    )
+    raw_summary = (tmp_path / "stress_summary.csv").read_text(encoding="utf-8")
+    assert "29.100000000000001" not in raw_summary
+    assert float(st3["nav_trigger_pct"]) == 29.1
+    assert float(st4["nav_trigger_pct"]) == 29.1
     st3_pb = margin[
         margin["scenario"].eq("ST3")
         & margin["pb_id"].eq(st3["terminated_pb"])

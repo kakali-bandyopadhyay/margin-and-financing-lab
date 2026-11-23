@@ -73,7 +73,29 @@ def _table(frame: pd.DataFrame) -> str:
     return f"<table><thead><tr>{headers}</tr></thead><tbody>{''.join(body)}</tbody></table>"
 
 
-def build(run_dir: Path, case: Case) -> None:
+def _stress_section(stress_dir: Path) -> str:
+    summary_path = stress_dir / "stress_summary.csv"
+    moves_path = stress_dir / "stress_moves.csv"
+    if not summary_path.is_file() or not moves_path.is_file():
+        return ""
+    summary = pd.read_csv(summary_path)
+    moves = pd.read_csv(moves_path)
+    if "notional_moved_usd" in moves.columns and len(moves):
+        moves = moves.sort_values(
+            ["notional_moved_usd", "scenario", "pos_id"],
+            ascending=[False, True, True],
+            kind="mergesort",
+        ).head(10)
+    return (
+        "<section><h2>Stress projection (Phase 2a)</h2>"
+        "<p>Illustrative static stress projection over the 90-day horizon; not calibrated and not any firm's methodology. "
+        "Cleared and exchange margin, path dependence and margin-call dynamics are out of scope.</p>"
+        f"<h3>Scenario summary</h3>{_table(summary)}"
+        f"<h3>Top 10 moves</h3>{_table(moves)}</section>"
+    )
+
+
+def build(run_dir: Path, case: Case, stress_dir: Path | None = None) -> None:
     run_dir = Path(run_dir)
     results_dir, tables_dir = run_dir / "results", run_dir / "tables"
     db = duckdb.connect(database=":memory:")
@@ -102,6 +124,7 @@ def build(run_dir: Path, case: Case) -> None:
     summary = result_frames["run_summary"].iloc[0]
     summary_html = _table(pd.DataFrame([summary]))
     seed = int(summary["seed"])
+    stress_html = _stress_section(Path(stress_dir)) if stress_dir is not None else ""
     document = (
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>margin-and-financing-lab – run report</title>"
         "<style>body{font:13px system-ui,sans-serif;max-width:1280px;margin:32px auto;padding:0 20px;color:#20242a}"
@@ -109,7 +132,7 @@ def build(run_dir: Path, case: Case) -> None:
         "th,td{padding:7px 9px;border-bottom:1px solid #d9dde2}th{background:#f1f3f5}"
         "tbody tr:nth-child(even){background:#f8f9fa}.num{text-align:right}.text{text-align:left}.note{font-style:italic;color:#555}footer{margin-top:38px;color:#555}</style></head><body>"
         f"<h1>margin-and-financing-lab – run report (seed {seed})</h1><p>{html.escape(_boundary())}</p>"
-        f"<section><h2>Run summary</h2>{summary_html}</section>{''.join(rendered)}"
+        f"<section><h2>Run summary</h2>{summary_html}</section>{''.join(rendered)}{stress_html}"
         "<footer>Synthetic data. Illustrative charge policy. Not validated.</footer></body></html>"
     )
     (run_dir / "report.html").write_text(document, encoding="utf-8", newline="\n")

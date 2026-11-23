@@ -19,6 +19,7 @@ from .io import Case, load_case, write_csv
 from .margin import margin_detail
 from .optimise import optimise
 from .report import build
+from .stress import run_scenarios, write_outputs
 
 
 def _git_head() -> str | None:
@@ -132,14 +133,37 @@ def run(seed: int, data_dir: Path, out_dir: Path) -> int:
     return 0
 
 
+def stress(seed: int, data_dir: Path, out_dir: Path) -> int:
+    if not (data_dir / "params.csv").is_file() and (data_dir / "raw").is_dir():
+        data_dir = data_dir / "raw"
+    case = load_case(data_dir)
+    case.params["seed"] = int(seed)
+    result = run_scenarios(case, data_dir=data_dir)
+    write_outputs(result, out_dir)
+
+    run_dir = Path(out_dir).parent / f"run_{seed}"
+    if (run_dir / "results" / "run_summary.csv").is_file():
+        build(run_dir, case, stress_dir=Path(out_dir))
+        print(run_dir / "report.html")
+    else:
+        print(Path(out_dir))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m mfl.cli")
+    parser = argparse.ArgumentParser(prog="python -m mfl")
     subparsers = parser.add_subparsers(dest="command", required=True)
     command = subparsers.add_parser("run")
     command.add_argument("--seed", type=int, default=42)
     command.add_argument("--data-dir", type=Path, default=Path("data/raw"))
     command.add_argument("--out", type=Path, default=Path("reports"))
+    stress_command = subparsers.add_parser("stress")
+    stress_command.add_argument("--seed", type=int, default=42)
+    stress_command.add_argument("--data", type=Path, default=Path("data"))
+    stress_command.add_argument("--out", type=Path, default=Path("reports/stress_42"))
     args = parser.parse_args(argv)
+    if args.command == "stress":
+        return stress(args.seed, args.data, args.out)
     return run(args.seed, args.data_dir, args.out)
 
 

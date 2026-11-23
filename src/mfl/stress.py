@@ -21,7 +21,7 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 
-from .io import Case, write_csv
+from .io import Case
 from .margin import margin_by_pb, margin_detail
 from .optimise import optimise
 
@@ -612,7 +612,7 @@ def _summary_table(
                 "terminated_pb": terminated_pb if scenario in TERMINATION_SCENARIOS else np.nan,
                 "notice_days": int(notice_days) if scenario in TERMINATION_SCENARIOS else np.nan,
                 "nav_trigger_pct": float(nav_trigger_pct) if scenario in TERMINATION_SCENARIOS else np.nan,
-                "notional_to_move_usd": float(notional_to_move) if scenario == "ST3" else np.nan,
+                "notional_to_move_usd": float(notional_to_move) if scenario in TERMINATION_SCENARIOS else np.nan,
             }
         )
     summary = pd.DataFrame(rows, columns=list(SUMMARY_COLUMNS))
@@ -784,7 +784,7 @@ def scenario_inputs(
             rates.loc[shocked, "base_rate"] = (
                 rates.loc[shocked, "base_rate"].astype(float) * 1.5
             )
-        if scenario == "ST3":
+        if scenario in TERMINATION_SCENARIOS:
             column = full_pbs.index(terminated_pb)
             notional_to_move = float(
                 case.book["notional_usd"].to_numpy(dtype=float)
@@ -909,6 +909,33 @@ def run_scenarios(
     )
 
 
+def _rounded_for_csv(frame: pd.DataFrame, decimals: int = 7) -> pd.DataFrame:
+    """Round stress-result floats for CSV display without changing Phase 1 output."""
+    rounded = frame.copy()
+    float_columns = rounded.select_dtypes(include=["floating"]).columns
+    if len(float_columns):
+        rounded[float_columns] = rounded[float_columns].round(decimals)
+    return rounded
+
+
+def _format_csv_float(value: float) -> str:
+    if pd.isna(value):
+        return ""
+    return repr(round(float(value), 7))
+
+
+def _write_stress_csv(frame: pd.DataFrame, path: Path) -> None:
+    """Write a stress CSV with compact floats; io.write_csv is deliberately untouched."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _rounded_for_csv(frame).to_csv(
+        path,
+        index=False,
+        float_format=_format_csv_float,
+        lineterminator="\n",
+        encoding="utf-8",
+    )
+
+
 def write_outputs(result: StressResult, out_dir: object) -> list[Path]:
     """Write the Phase 2a CSVs and return their paths."""
     directory = Path(out_dir)
@@ -923,6 +950,6 @@ def write_outputs(result: StressResult, out_dir: object) -> list[Path]:
     paths: list[Path] = []
     for name, frame in frames.items():
         path = directory / f"{name}.csv"
-        write_csv(frame, path)
+        _write_stress_csv(frame, path)
         paths.append(path)
     return paths

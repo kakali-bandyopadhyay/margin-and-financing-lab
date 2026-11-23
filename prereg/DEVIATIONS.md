@@ -62,3 +62,8 @@ Each entry: date · what changed · why · effect on results · commit.
 - Effect: The ST3/ST4 no-slack borrow RHS is `1e-9` rather than `0`; reported borrow slack changes by at most `1e-9` USD because `_slack_amounts` uses the original `0`. ST0–ST2b and Phase 1 are unchanged. The prereg §3.6 statement that the no-slack solve enforces `available = 0` is no longer literally true for these two scenarios.
 - Commit: 5ae6912
 
+## D-11 · 2026-11-23 · ST4 notional_to_move_usd populated
+- What: `stress_summary.csv` now fills `notional_to_move_usd` for ST4 as well as ST3, using the same fixed basis as ST3: `sum_i N_i * w0(i, PB_D)`. ST4 also carries the same `positions_moved` count internally. ST0–ST2b remain blank.
+- Why: ST4 includes the ST3 termination and already carries PB_D, `notice_days` and `nav_trigger_pct`; leaving the notional blank was an incomplete field flagged in review. The notice timing (126 days > 90-day horizon, cost window from 2027-03-05) is already fixed in prereg §3.6 and is not changed here.
+- Effect: ST4 `notional_to_move_usd` = 2,912,025,250.53 on the same basis as ST3. This is a display/completeness change; margin, slack, additional funding requirement, allocations and Phase 1 are unchanged. It changes the prereg §4.1 wording “ST3 only … blank for ST4”.
+- Commit: (uncommitted)

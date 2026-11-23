@@ -129,3 +129,53 @@ Split hedged families (E1): CE_ISS004 L2 (PB_A, PB_B, PB_D); CE_ISS006 L2 (PB_A,
 
 Model behaviour under stated assumptions on a synthetic book – not predictions, not calibrated to any prime broker, exchange or clearing house, and not validated. Limitations: [`docs/MODEL_DOC.md`](docs/MODEL_DOC.md) §11; validation status: §12.
 
+## 11. Phase 2a – stress projection
+
+Run `python -m mfl stress --seed 42 --data data --out reports/stress_42`; the CSVs are in [`reports/stress_42/`](reports/stress_42/). ST0 reproduces the Phase 1 `run_42` totals to the cent (S1), so the scenario deltas are measured against the same book and optimiser. Amounts are USD. The cost columns cover 90 days: ST0–ST2b start at 2026-10-30; ST3/ST4 start at 2027-03-05 because PB_D's notice is 126 days (see the timing note below).
+
+ST2a and ST2b are **margin-rate shocks**: they multiply the PB margin `base_rate` by 1.5, not the financing spread `financing_spread_bps`. Financing cost therefore moves only through reallocation, and the margin-funding cost moves with the margin base.
+
+### Summary
+
+| Scenario | Total margin | Δ margin | Status | Capacity slack | Counterparty slack | Borrow slack | Additional funding requirement |
+|---|---:|---:|---|---:|---:|---:|---:|
+| ST0 base | 1,747,690,859.46 | 0.00 | optimal | 0.00 | 0.00 | 0.00 | 0.00 |
+| ST1a vol ×2 | 1,903,183,814.12 | 155,492,954.66 | optimal | 0.00 | 0.00 | 0.00 | 155,492,954.66 |
+| ST1b vol ×1.5 | 1,888,285,773.40 | 140,594,913.93 | optimal | 0.00 | 0.00 | 0.00 | 140,594,913.93 |
+| ST2a margin rate ×1.5, all PBs | 2,589,725,771.13 | 842,034,911.67 | infeasible | 0.00 | 374,692,417.13 | 0.00 | 1,216,727,328.80 |
+| ST2b margin rate ×1.5, PB_D + PB_A | 2,266,843,405.64 | 519,152,546.17 | infeasible | 0.00 | 51,810,051.64 | 0.00 | 570,962,597.81 |
+| ST3 PB_D termination | 1,794,630,573.66 | 46,939,714.20 | infeasible | 0.00 | 411,509,543.66 | 61,924,557.00 | 520,373,814.86 |
+| ST4 combined | 2,226,410,109.27 | 478,719,249.80 | infeasible | 0.00 | 843,289,079.27 | 61,924,557.00 | 1,383,932,886.07 |
+
+| Scenario | Financing cost | Δ financing | Margin-funding cost | Δ margin funding |
+|---|---:|---:|---:|---:|
+| ST0 base | 17,345,110.09 | 0.00 | 4,369,227.15 | 0.00 |
+| ST1a vol ×2 | 17,381,879.30 | 36,769.20 | 4,757,959.54 | 388,732.39 |
+| ST1b vol ×1.5 | 17,372,788.76 | 27,678.67 | 4,720,714.43 | 351,487.28 |
+| ST2a margin rate ×1.5, all PBs | — | — | — | — |
+| ST2b margin rate ×1.5, PB_D + PB_A | — | — | — | — |
+| ST3 PB_D termination | — | — | — | — |
+| ST4 combined | — | — | — | — |
+
+For an infeasible scenario the margin and slack columns use the minimum-total-slack allocation; financing and margin-funding costs are undefined and shown as “—”. The additional funding requirement is `Δ margin + capacity slack + counterparty slack + borrow slack`, as pre-registered. It is **not a cash amount**: counterparty slack is margin above the counterparty limits, so it is already counted in total margin (in ST3, PB_B's margin rise equals the 411.51m counterparty slack to the cent), and the figure adds a limit shortfall to a margin increase. There is no available-liquidity or buffer term, so it is not a liquidity-coverage gap.
+
+### Expected behaviour E-S1–E-S5
+
+| ID | Expectation (prereg §4) | Result | Evidence |
+|---|---|---|---|
+| E-S1 | ST1a, ST1b, ST2a, ST2b and ST4 total margin ≥ ST0 | **Met** | All five deltas are positive: +155.49m, +140.59m, +842.03m, +519.15m, +478.72m. |
+| E-S2 | ST2a moves few or no positions; ST2b moves positions away from the two shocked PBs | **Not met for ST2a; direction met (net) for ST2b** | ST2a changes 92 of 214 positions, but ST2a is infeasible and those moves come from the relaxed solver solution, so they are not a clean control allocation. ST2b changes 104 positions (154 from→to rows: 56 leave PB_A/PB_D for PB_B/PB_C, 33 move the other way); net allocated notional at PB_D + PB_A falls by 467.28m versus ST0. |
+| E-S3 | In ST3 no position remains at the terminated PB | **Met** | PB_D is removed from the feasible set; `max_i w_ST3(i, PB_D) = 0`, and the written ST3 PB_D row has zero margin, gross and utilisation. |
+| E-S4 | ST3 total margin rises by more than reallocation alone explains, because offsets within the terminated PB are lost | **Not met** | ST3 total margin rises 46.94m, but reallocation alone is +70.39m and total netting change is −23.45m: netting benefit rose on reallocation rather than falling. PB_D's own 79.49m netting benefit is lost, but the receiving PBs gain more. See `stress_st3_netting.csv`. ST3 is infeasible: the whole 411.51m counterparty shortfall sits at PB_B, so this decomposition describes the minimum-slack allocation, not an optimised post-termination book. |
+| E-S5 | ST4 additional funding requirement ≥ the largest of ST1a, ST2b and ST3 | **Met** | ST4 1,383.93m ≥ max(155.49m, 570.96m, 520.37m) = 570.96m. |
+
+### Findings and qualifications
+
+- **PB_D stays live for the whole 90-day horizon under its own notice terms.** `notice_days = 126` is longer than the 90-day horizon. The pre-registration fixes the consequence in §3.6: ST3/ST4 are evaluated at the termination date 2027-03-05, and their 90-day cost window starts there. This is a fixed timing convention, not a second horizon; it means ST3/ST4 are not cash-flow comparisons over the same calendar window as ST0–ST2b. The finding for a reader is that PB_D's notice period alone outlasts the horizon.
+- **ST2a's infeasibility matters for interpretation.** The uniform margin-rate shock breaches the counterparty limits by 374.69m; its 92 changed positions are from the relaxed solution. Treat ST2a as a control that shows how far a uniform margin-rate shock moves the margin base, not as a clean reallocation experiment.
+- **ST2b does move away from the shocked PBs.** PB_D + PB_A allocated notional falls by 467.28m, with a 51.81m counterparty shortfall. The move is a direction, not a claim that the post-shock book is feasible.
+- **ST3/ST4 termination.** Both remove PB_D and report the same 2,912,025,250.53 notional to move across 106 ST0 positions (ST4 uses the same fixed ST0 basis; D-11). The ST3/ST4 borrow slack is 61.92m, from the two ISS010 shorts (`POS0076`, `POS0098`) that had a locate only at PB_D; the remainder of the slack is counterparty. No position remains at PB_D.
+- **The netting decomposition is reported separately from reallocation.** `stress_st3_netting.csv` shows `margin_with_offsets`, `margin_without_offsets`, the ST0 netting benefit and `netting_change = NB(ST0) − NB(ST3)`; the identity `Δ margin = reallocation + netting_change` holds row by row and in total. The negative total netting change is why E-S4 is not met.
+- **Rounding.** Stress CSVs are rounded to 7 decimal places in the stress writer only; `io.write_csv` and the Phase 1 outputs are unchanged. This removes values such as `29.100000000000001` without altering the S6 identity.
+
+This projection is illustrative, not calibrated and not any firm's methodology. Cleared or exchange margin, path dependence and margin-call dynamics are out of scope.
