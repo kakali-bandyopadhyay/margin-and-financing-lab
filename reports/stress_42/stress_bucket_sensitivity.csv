@@ -1,0 +1,2 @@
+scenario,cut_low,cut_high,total_margin_usd,delta_margin_vs_st0_usd,status
+ST1a_cuts_0.12_0.24,0.12,0.24,1889688089.7482188,141997230.2849038,optimal

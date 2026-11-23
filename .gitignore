@@ -7,6 +7,7 @@ __pycache__/
 *.db
 reports/*
 !reports/run_42/
+!reports/stress_42/
 *.zip
 *.xlsx
 .pytest_cache/
