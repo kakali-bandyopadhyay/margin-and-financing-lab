@@ -54,11 +54,11 @@ Each entry: date · what changed · why · effect on results · commit.
 - What: `src/mfl/stress.py` adds a contained solver retry. If HiGHS returns an unpackable `UNKNOWN` solution, the same cvxpy problem is re-solved with CLARABEL. The retry monkeypatches `cvxpy.Problem.solve` for the duration of each stress optimiser call and restores it in a `finally` block. In the primary case the observed trigger is ST2b; HiGHS reports that LP as `UNKNOWN`, CLARABEL identifies it as infeasible, and the Phase 1 slack re-solve then runs.
 - Why: prereg §2.3 fixes the solver settings as unchanged. HiGHS returning `UNKNOWN` prevents the existing optimiser from reaching its infeasible/slack branch, so the pre-registered ST2b status and slack outputs cannot otherwise be produced. The alternative would have been to change Phase 1 `optimise.py`; the fallback is local to `stress.py`.
 - Effect: ST2b's status and slacks come from the CLARABEL-retried solve. ST0, ST1a, ST1b, ST2a, ST3 and ST4 use HiGHS normally; CLARABEL is used only after an UNKNOWN result. Phase 1 code, formulas, `run_42` outputs and A1–A7 are unchanged. The global cvxpy patch is not thread-safe and is active only inside `stress.py` optimiser calls; the retry emits a cvxpy backend warning. This is a solver-setting change not in the pre-registration.
-- Commit: (uncommitted)
+- Commit: 5ae6912
 
 ## D-10 · 2026-11-22 · ST3/ST4 locate relaxation uses 1e-9 USD for zero availability
 - What: For ST3 and ST4, `_relaxed_borrow` replaces `borrow_available_usd == 0` with `1e-9` USD at the remaining PBs so the Phase 1 `funding_rates` mask allows the cell. The no-slack solve therefore has a borrow RHS of `1e-9` instead of exactly `0`. The borrow shortfall is still computed against the original zero availability and reported as `slack_borrow_usd`.
 - Why: `POS0076` and `POS0098` (issuer `ISS010`) need a locate that is available only at the terminated PB_D. Removing PB_D would otherwise raise "no allowed PB" before the slack re-solve, instead of producing the pre-registered infeasible-with-borrow-slack ST3 result. The `1e-9` is a numerical enabler, not an economic amount.
 - Effect: The ST3/ST4 no-slack borrow RHS is `1e-9` rather than `0`; reported borrow slack changes by at most `1e-9` USD because `_slack_amounts` uses the original `0`. ST0–ST2b and Phase 1 are unchanged. The prereg §3.6 statement that the no-slack solve enforces `available = 0` is no longer literally true for these two scenarios.
-- Commit: (uncommitted)
+- Commit: 5ae6912
 

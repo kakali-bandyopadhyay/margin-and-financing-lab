@@ -615,7 +615,9 @@ def _summary_table(
                 "notional_to_move_usd": float(notional_to_move) if scenario == "ST3" else np.nan,
             }
         )
-    return pd.DataFrame(rows, columns=list(SUMMARY_COLUMNS))
+    summary = pd.DataFrame(rows, columns=list(SUMMARY_COLUMNS))
+    summary["notice_days"] = summary["notice_days"].astype("Int64")
+    return summary
 
 
 def _margin_by_pb_table(
