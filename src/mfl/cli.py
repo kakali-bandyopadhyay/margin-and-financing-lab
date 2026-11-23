@@ -14,11 +14,12 @@ import numpy as np
 import pandas as pd
 
 from .attribution import attribute
+from .calibrate import run_calibration
 from .exhibits import all_in_cost, euler_allocation, resolve_usage
 from .io import Case, load_case, write_csv
 from .margin import margin_detail
 from .optimise import optimise
-from .report import build
+from .report import build, build_calib
 from .stress import run_scenarios, write_outputs
 
 
@@ -150,6 +151,19 @@ def stress(seed: int, data_dir: Path, out_dir: Path) -> int:
     return 0
 
 
+def calibrate(seed: int, data_dir: Path, raw_dir: Path, out_dir: Path) -> int:
+    """Run Phase 2b calibration into a separate output directory."""
+    case_dir = data_dir
+    if not (case_dir / "params.csv").is_file() and (case_dir / "raw").is_dir():
+        case_dir = case_dir / "raw"
+    case = load_case(case_dir)
+    case.params["seed"] = int(seed)
+    run_calibration(case, raw_dir, out_dir)
+    report_path = build_calib(out_dir, case)
+    print(report_path)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m mfl")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -161,9 +175,16 @@ def main(argv: list[str] | None = None) -> int:
     stress_command.add_argument("--seed", type=int, default=42)
     stress_command.add_argument("--data", type=Path, default=Path("data"))
     stress_command.add_argument("--out", type=Path, default=Path("reports/stress_42"))
+    calibrate_command = subparsers.add_parser("calibrate")
+    calibrate_command.add_argument("--seed", type=int, default=42)
+    calibrate_command.add_argument("--data", type=Path, default=Path("data"))
+    calibrate_command.add_argument("--raw", type=Path, default=Path("data/public/raw"))
+    calibrate_command.add_argument("--out", type=Path, default=Path("reports/calib_42"))
     args = parser.parse_args(argv)
     if args.command == "stress":
         return stress(args.seed, args.data, args.out)
+    if args.command == "calibrate":
+        return calibrate(args.seed, args.data, args.raw, args.out)
     return run(args.seed, args.data_dir, args.out)
 
 

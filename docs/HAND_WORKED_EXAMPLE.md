@@ -210,3 +210,27 @@ The test compares both returns and the duration calculation with the implementat
 
 Let the estimation date be 31 January and the next month contain 21 trading-day observations. Starting with `P(d_m) = 100`, take each following close to be `100 × exp(0.01j)` on day `j`. For `h = 10`, the first window is days 1–10 and its return is `ln(P(day 10)) − ln(P(d_m)) = 0.10`; a second window uses days 11–20, and day 21 is dropped. For `h = 2`, ten complete windows use days 1–20 and day 21 is dropped. Each window starts immediately after the previous one, and no window crosses the month-end.
 
+## Phase 2b – C1 ES/VaR tail rule
+
+The test sample is 120 hand-built losses: the three largest are `10`, `7` and `5`, and the other 117 are `0.9 − 0.9 × (i/116)^1.5` for `i = 0 … 116` – strictly decreasing, unevenly spaced values from `0.9` down to `0.0`. Every value is distinct, so a wrong tail count cannot land on the same answer by accident.
+
+With `n = 120` and `α = 0.975`, `k = ceil((1 − 0.975) × 120) = ceil(3) = 3`:
+
+```text
+ES 97.5  = (10 + 7 + 5) / 3 = 22/3 = 7.333333333333333
+VaR 97.5 = L_(3) = 5
+```
+
+With `α = 0.99`, `k = ceil(0.01 × 120) = ceil(1.2) = 2`:
+
+```text
+ES 99  = (10 + 7) / 2 = 8.5
+VaR 99 = L_(2) = 7
+```
+
+The `k = 3` boundary is the case that exposes binary floating point: `(1 − 0.975) × 120` evaluates to `3.0000000000000027`, so a bare `ceil` returns `4` and `ES 97.5` becomes `(10 + 7 + 5 + 0.9) / 4 = 5.725`. The implementation rounds the product to 9 decimals before taking the ceiling.
+
+For the edge case, take 40 losses: `3.25`, `2.75`, then 38 evenly spaced values from `2.4` down to `0.05`. `(1 − 0.975) × 40` evaluates to `1.0000000000000009`, which rounds to `1`, so `k = 1` and `ES 97.5 = VaR 97.5 = 3.25` – the largest loss alone. A bare `ceil` would give `k = 2`, `ES 97.5 = 3.0` and `VaR 97.5 = 2.75`.
+
+The tests compare every value with absolute tolerance `1e-12`.
+

@@ -137,3 +137,74 @@ def build(run_dir: Path, case: Case, stress_dir: Path | None = None) -> None:
     )
     (run_dir / "report.html").write_text(document, encoding="utf-8", newline="\n")
     db.close()
+
+
+def build_calib(calib_dir: Path, case: Case) -> Path:
+    """Render the isolated Phase 2b report from calibration CSV outputs."""
+    calib_dir = Path(calib_dir)
+
+    def read(name: str) -> pd.DataFrame:
+        path = calib_dir / name
+        return pd.read_csv(path) if path.is_file() else pd.DataFrame()
+
+    targets = read("calibration_targets.csv")
+    backtest = read("backtest.csv")
+    drivers = read("drivers_irsf.csv")
+    summary = read("calib_summary.csv")
+    charges = read("calib_pm_charges.csv")
+    if len(charges) and "delta" in charges:
+        charges = charges.assign(_abs_delta=charges["delta"].abs()).sort_values(
+            ["_abs_delta"], ascending=False, kind="mergesort"
+        ).head(10).drop(columns="_abs_delta")
+    backtest_display = backtest.copy()
+    if len(backtest_display) and {"product_type", "apc", "side", "rate"}.issubset(backtest_display.columns):
+        worse_rate = backtest_display.groupby(["product_type", "apc"])["rate"].transform("max")
+        backtest_display["worse_side"] = np.isclose(
+            pd.to_numeric(backtest_display["rate"], errors="coerce"),
+            pd.to_numeric(worse_rate, errors="coerce"),
+            rtol=0.0,
+            atol=1e-15,
+            equal_nan=False,
+        )
+    chart = "<p>Driver data unavailable.</p>"
+    if len(drivers) and {"driver", "setting", "T"}.issubset(drivers.columns):
+        finite = drivers[pd.to_numeric(drivers["T"], errors="coerce").notna()].copy()
+        maximum = max(float(finite["T"].max()), 1e-12) if len(finite) else 1.0
+        bars = []
+        for i, row in enumerate(finite.to_dict("records")):
+            width = 520 * max(0.0, float(row["T"])) / maximum
+            y = 24 + i * 28
+            label = html.escape(f"{row['driver']}: {row['setting']}")
+            bars.append(f'<text x="0" y="{y + 14}">{label}</text><rect x="170" y="{y}" width="{width:.2f}" height="18" fill="#4776a8"/>')
+        chart = f'<svg role="img" aria-label="Drivers bar chart" viewBox="0 0 720 {max(60, 28 * len(bars) + 20)}" width="100%">{"".join(bars)}</svg>'
+    minimum_slack_note = ""
+    if len(summary) and "status" in summary and summary["status"].astype(str).eq("infeasible").any():
+        minimum_slack_note = (
+            '<p class="note">The calibrated allocation is infeasible; reported allocations and '
+            'charges use the minimum-slack solution, with slack shown by block.</p>'
+        )
+    sections = [
+        ("Calibration targets", targets),
+        ("Walk-forward backtest", backtest_display),
+        ("Calibrated portfolio summary", summary),
+        ("Top 10 PM charge changes", charges),
+    ]
+    rendered = "".join(
+        f"<section><h2>{html.escape(title)}</h2>{_table(frame) if len(frame) else '<p>Output unavailable.</p>'}</section>"
+        for title, frame in sections
+    )
+    document = (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Calibration report</title>'
+        '<style>body{font:13px system-ui,sans-serif;max-width:1280px;margin:32px auto;padding:0 20px;color:#20242a}'
+        'section{margin:30px 0}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}'
+        'th,td{padding:7px 9px;border-bottom:1px solid #d9dde2}th{background:#f1f3f5}.num{text-align:right}.text{text-align:left}'
+        'tbody tr:nth-child(even){background:#f8f9fa}footer{margin-top:38px;color:#555}</style></head><body>'
+        '<h1>Phase 2b calibration</h1>'
+        '<p>Illustrative public-market proxies; not validated; not matched risk calibration.</p>'
+        f'<section><h2>Exchange-margin drivers</h2>{chart}</section>{minimum_slack_note}{rendered}'
+        '<footer>Assumed margin periods of risk. Results are reported as found.</footer></body></html>'
+    )
+    output = calib_dir / "report.html"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(document, encoding="utf-8", newline="\n")
+    return output
