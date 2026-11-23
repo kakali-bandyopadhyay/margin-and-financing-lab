@@ -140,7 +140,7 @@ def _unknown_solver_fallback():
         except ValueError as exc:
             if "Cannot unpack invalid solution" not in str(exc):
                 raise
-            return original(self, solver=cp.CLARABEL)
+            return original(self, *args, **{**kwargs, "solver": cp.CLARABEL})
 
     cp.Problem.solve = solve_with_fallback
     try:
