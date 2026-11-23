@@ -179,3 +179,131 @@ For an infeasible scenario the margin and slack columns use the minimum-total-sl
 - **Rounding.** Stress CSVs are rounded to 7 decimal places in the stress writer only; `io.write_csv` and the Phase 1 outputs are unchanged. This removes values such as `29.100000000000001` without altering the S6 identity.
 
 This projection is illustrative, not calibrated and not any firm's methodology. Cleared or exchange margin, path dependence and margin-call dynamics are out of scope.
+
+## 12 Phase 2b – calibration
+
+These are the Phase 2b outputs, reported as found. The exercise uses illustrative public-market proxies and assumed margin periods of risk; it is not validated and is not a claim about any broker or regulatory methodology. Results below are transcribed from the `reports/calib_42` CSVs.
+
+### Input reproduction
+
+| Symbol | Source | Field | First date | Last date | Rows | Digest comparison |
+| --- | --- | --- | --- | --- | --- | --- |
+| DEXUSEU | FRED | DEXUSEU | 2015-01-02 | 2026-10-30 | 2,957 | identical |
+| DGS10 | FRED | DGS10 | 2015-01-02 | 2026-10-30 | 2,959 | identical |
+| GLD | Tiingo | adjClose | 2015-01-02 | 2026-10-30 | 2,975 | identical |
+| HYG | Tiingo | adjClose | 2015-01-02 | 2026-10-30 | 2,975 | identical |
+| SPY | Tiingo | adjClose | 2015-01-02 | 2026-10-30 | 2,975 | identical |
+
+All five local raw files have SHA-256 digests identical to the committed input digest. Reproduction status (§1.4): pending the clean-clone run.
+
+### Calibration targets
+
+| Product type | proxy | h | n_recent | ES_recent_long | ES_recent_short | ES_recent | ES_stress | stress_window_end | floor_binding | T | b_t | R_t | k_t |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cash_equity | SPY | 10 | 501 | 0.078283 | 0.073283 | 0.078283 | 0.222669 | 2020-03-23 | No | 0.114380 | V2 | 0.174497 | 0.504218 |
+| cds_proxy | HYG | 5 | 501 | 0.017473 | 0.015785 | 0.017473 | 0.096872 | 2020-03-23 | No | 0.037323 | V1 | 0.066208 | 0.563725 |
+| commodity_future | GLD | 2 | 501 | 0.065027 | 0.050934 | 0.065027 | 0.083053 | 2026-06-10 | No | 0.069534 | V3 | 0.088806 | 0.434989 |
+| equity_swap | SPY | 10 | 501 | 0.078283 | 0.073283 | 0.078283 | 0.222669 | 2020-03-23 | No | 0.114380 | V2 | 0.153582 | 0.572883 |
+| fx_forward | DEXUSEU | 10 | 500 | 0.027483 | 0.043681 | 0.043681 | 0.057416 | 2016-01-14 | No | 0.047115 | V1 | 0.034125 | 1.380636 |
+| govt_bond | DGS10 | 10 | 499 | 0.028551 | 0.022589 | 0.028551 | 0.050620 | 2020-04-01 | No | 0.034068 | V1 | 0.021051 | 1.618377 |
+| irs_proxy_future | DGS10 | 2 | 499 | 0.013452 | 0.012336 | 0.013452 | 0.022585 | 2023-02-06 | No | 0.015735 | V1 | 0.034947 | 0.450254 |
+
+### Walk-forward backtest
+
+The table retains both sides and APC/no-APC results. `Worse side` is derived from the higher recorded exceedance rate within each product type and APC setting; ties are both marked. Kupiec POF and traffic-light zones use the registered 1% nominal rate.
+
+| Product type | Side | APC | Windows | Exceedances | Rate | Kupiec LR | Kupiec p | Zone | Worse side |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cash_equity | long | No | 175 | 2 | 0.011429 | 0.034486 | 0.852676 | green | Yes |
+| cash_equity | long | Yes | 175 | 1 | 0.005714 | 0.384011 | 0.535465 | green | Yes |
+| cash_equity | short | No | 175 | 0 | 0 | 3.517618 | 0.060720 | green | No |
+| cash_equity | short | Yes | 175 | 0 | 0 | 3.517618 | 0.060720 | green | No |
+| cds_proxy | long | No | 361 | 5 | 0.013850 | 0.482715 | 0.487195 | green | Yes |
+| cds_proxy | long | Yes | 361 | 3 | 0.008310 | 0.110468 | 0.739612 | green | Yes |
+| cds_proxy | short | No | 361 | 2 | 0.005540 | 0.865000 | 0.352343 | green | No |
+| cds_proxy | short | Yes | 361 | 2 | 0.005540 | 0.865000 | 0.352343 | green | No |
+| commodity_future | long | No | 949 | 14 | 0.014752 | 1.888608 | 0.169359 | green | Yes |
+| commodity_future | long | Yes | 949 | 9 | 0.009484 | 0.026003 | 0.871893 | green | No |
+| commodity_future | short | No | 949 | 14 | 0.014752 | 1.888608 | 0.169359 | green | Yes |
+| commodity_future | short | Yes | 949 | 10 | 0.010537 | 0.027207 | 0.868988 | green | Yes |
+| equity_swap | long | No | 175 | 2 | 0.011429 | 0.034486 | 0.852676 | green | Yes |
+| equity_swap | long | Yes | 175 | 1 | 0.005714 | 0.384011 | 0.535465 | green | Yes |
+| equity_swap | short | No | 175 | 0 | 0 | 3.517618 | 0.060720 | green | No |
+| equity_swap | short | Yes | 175 | 0 | 0 | 3.517618 | 0.060720 | green | No |
+| fx_forward | long | No | 173 | 1 | 0.005780 | 0.366864 | 0.544719 | green | No |
+| fx_forward | long | Yes | 173 | 0 | 0 | 3.477416 | 0.062212 | green | No |
+| fx_forward | short | No | 173 | 3 | 0.017341 | 0.772386 | 0.379480 | green | Yes |
+| fx_forward | short | Yes | 173 | 3 | 0.017341 | 0.772386 | 0.379480 | green | Yes |
+| govt_bond | long | No | 173 | 2 | 0.011561 | 0.040529 | 0.840450 | green | Yes |
+| govt_bond | long | Yes | 173 | 2 | 0.011561 | 0.040529 | 0.840450 | green | Yes |
+| govt_bond | short | No | 173 | 2 | 0.011561 | 0.040529 | 0.840450 | green | Yes |
+| govt_bond | short | Yes | 173 | 1 | 0.005780 | 0.366864 | 0.544719 | green | No |
+| irs_proxy_future | long | No | 946 | 7 | 0.007400 | 0.710185 | 0.399382 | green | No |
+| irs_proxy_future | long | Yes | 946 | 7 | 0.007400 | 0.710185 | 0.399382 | green | No |
+| irs_proxy_future | short | No | 946 | 12 | 0.012685 | 0.634917 | 0.425557 | green | Yes |
+| irs_proxy_future | short | Yes | 946 | 9 | 0.009514 | 0.022965 | 0.879547 | green | Yes |
+
+With 173–175 non-overlapping windows for h = 10, zero exceedances gives Kupiec p ≈ 0.06: at these sample sizes the test has little power to reject a conservative target, and every zone is green.
+
+### Exchange-margin drivers
+
+| Driver | Setting | ES recent | T | PB | Pre-buffer unit margin | ZN initial margin / notional (decimal) | Ratio |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| confidence | ES 97.5 (base) | 0.013452 | 0.015735 |  |  |  |  |
+| confidence | VaR 99 | 0.013124 | 0.015603 |  |  |  |  |
+| confidence | ES 99 | 0.016259 | 0.019136 |  |  |  |  |
+| MPOR | 1 trading days | 0.009988 | 0.011630 |  |  |  |  |
+| MPOR | 2 trading days (base) | 0.013452 | 0.015735 |  |  |  |  |
+| MPOR | 5 trading days | 0.022044 | 0.024901 |  |  |  |  |
+| lookback | 1 years | 0.012325 | 0.014890 |  |  |  |  |
+| lookback | 2 years (base) | 0.013452 | 0.015735 |  |  |  |  |
+| lookback | 5 years | 0.018284 | 0.019359 |  |  |  |  |
+| APC | none | 0.013452 | 0.013452 |  |  |  |  |
+| APC | 25% stressed weight with floor | 0.013452 | 0.015735 |  |  |  |  |
+| APC | 25% buffer | 0.013452 | 0.016815 |  |  |  |  |
+| APC | 10-year lookback floor | 0.013452 | 0.016760 |  |  |  |  |
+| scaling | overlapping h=2 (base) | 0.013452 | 0.015735 |  |  |  |  |
+| scaling | sqrt(2) × 1-day | 0.014125 | 0.016447 |  |  |  |  |
+| ZN comparison | PB_A at Phase 1 bucket V1 |  |  | PB_A | 0.016630 | 0.017754 | 0.936667 |
+| ZN comparison | PB_B at Phase 1 bucket V1 |  |  | PB_B | 0.019049 | 0.017754 | 1.072955 |
+| ZN comparison | PB_C at Phase 1 bucket V1 |  |  | PB_C | 0.011752 | 0.017754 | 0.661936 |
+| ZN comparison | PB_D at Phase 1 bucket V1 |  |  | PB_D | 0.014790 | 0.017754 | 0.833044 |
+
+### Pre-registered expectations
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| E-C1 | Met | Stressed ES exceeds recent ES on every target row, so the floor is non-binding. |
+| E-C2 | Met | MPOR target is increasing; ES 97.5 is at least VaR 99; the ES-recent and target scaling gaps are 5.00% and 4.52%, respectively. |
+| E-C3 | Met | APC strictly lowers the worse-side count for 5 of the seven product types. cash_equity and equity_swap share SPY and h = 10, so their backtest rows are identical by construction; counted on distinct proxy/h pairs the result is 4 of 6. |
+| E-C4 | Not met | No PM rank changes in the calibrated charge output. |
+| E-C5 | Met | All four ZN ratios are inside the registered 0.5–3 range; observed range 0.662–1.073. |
+
+Formula-implied properties (including APC not below no-APC) are acceptance-test results, not empirical expectations. E-C1–E-C5 are reported as found; no parameters were retuned to meet them.
+
+### Re-optimised calibrated case
+
+| status | total margin usd | delta total margin usd | financing cost usd | delta financing cost usd | margin funding cost usd | delta margin funding cost usd | slack capacity usd | slack counterparty usd | slack borrow usd | total slack usd |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| optimal | $944,334,264.71 | -$803,356,594.75 | $16,896,602.15 | -$448,507.95 | $2,360,835.66 | -$2,008,391.49 | 0 | 0 | 0 | 0 |
+
+The −$803.36m is a change in the level of total margin, not a cost saving or a cash amount. Five of the seven types have k_t below 1 (0.43–0.57) because the synthetic Phase 1 rates sit above the proxy-implied targets; fx_forward and govt_bond are scaled up (1.38 and 1.62). The financing and margin-funding deltas are illustrative consequences of the same rescaling.
+
+### PM charge changes
+
+Top ten rows ranked by absolute charge change in `calib_pm_charges.csv`; the complete table remains in that CSV.
+
+| PM | Phase 1 charge | Calibrated charge | Change | Phase 1 rank | Calibrated rank | Rank change |
+| --- | --- | --- | --- | --- | --- | --- |
+| PM05 | $1,528,403.74 | $854,912.75 | -$673,490.99 | 1 | 1 | 0 |
+| PM01 | $1,043,390.62 | $526,339.01 | -$517,051.62 | 2 | 2 | 0 |
+| PM03 | $466,004.18 | $250,620.19 | -$215,383.99 | 3 | 3 | 0 |
+| PM04 | $331,544.78 | $171,964.16 | -$159,580.62 | 5 | 5 | 0 |
+| PM06 | $296,064.20 | $147,693.50 | -$148,370.70 | 6 | 6 | 0 |
+| PM02 | $357,324.63 | $210,520.89 | -$146,803.74 | 4 | 4 | 0 |
+| PM09 | $148,845.42 | $88,192.95 | -$60,652.47 | 7 | 7 | 0 |
+| PM07 | $90,434.06 | $46,690.84 | -$43,743.22 | 8 | 8 | 0 |
+| PM10 | $77,989.75 | $36,353.42 | -$41,636.33 | 9 | 9 | 0 |
+| PM08 | $29,225.76 | $27,547.94 | -$1,677.82 | 10 | 10 | 0 |
+
+The calibrated allocation status and slacks are shown in the summary table. PM charge changes are illustrative pass-through amounts under the stated policy. None of these results establishes model validity.

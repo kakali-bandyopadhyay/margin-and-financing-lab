@@ -27,7 +27,7 @@ This is a personal prototype built on synthetic inputs. Its margin calculation i
 
 ## 3 Data
 
-The loader reads nine CSV tables into DuckDB. The files are synthetic, and their sizes, origins and provenance labels are maintained in [SOURCES.md](../data/SOURCES.md).
+The Phase 1 case loader reads nine CSV tables into DuckDB. Those case files are synthetic, and their sizes, origins and provenance labels are maintained in [SOURCES.md](../data/SOURCES.md). Phase 2b calibration also uses public-market proxy series listed in [`calibration_proxies.csv`](../data/public/calibration_proxies.csv); their source fields and input digest are documented in [SOURCES.md](../data/SOURCES.md).
 
 | Table | Rows | Source file |
 |---|---:|---|
@@ -89,6 +89,16 @@ The solo-margin amount for a PM is calculated on that PM's own positions at w*. 
 
 The report presents re-solved usage, all-in cost attribution and Euler allocations as distinct exhibits. For a convex degree-one homogeneous proxy, every subgradient sums to M. At a kink, the PM split is not unique, so the report gives a [low, high] range for each PM's Euler value. Aumann–Shapley equals Euler when the Euler allocation is unique, because the gradient is then constant along the ray; the model does not calculate Aumann–Shapley separately. This is the corrected statement recorded in [D-04](../prereg/DEVIATIONS.md#d-04--2026-11-18--m3-exhibits-tests-x1x3-added-euler-wording-corrected).
 
+### 5.5 M4 – Phase 2b calibration
+
+M4 is a separate calibration exercise around the Phase 1 rate table. For each of seven product types, it measures two-sided expected shortfall (ES) at 97.5% on overlapping returns over the recent window and on rolling stressed windows. Its anti-procyclicality target is the greater of recent ES and a blend of recent and stressed ES. The target is mapped to an equal-weighted Phase 1 L1 reference rate at the proxy's current volatility bucket. A product-type scale factor is then applied to every PB, product and liquidity-tier rate in that type, preserving the Phase 1 relativities. The calibrated rates are used to re-run allocation and illustrative PM charge attribution on a copy of the Phase 1 case.
+
+The backtest re-estimates targets at each month-end using data available by that date. It counts non-overlapping test windows in the following month separately for long and short positions, with APC and without APC. Coverage is reported with the registered Kupiec proportion-of-failures statistic and a binomial traffic-light zone. The calibration targets, backtest, drivers and re-optimised results are reported in [RESULTS.md §12](../RESULTS.md#12-phase-2b--calibration); they are reported as found.
+
+The inputs are illustrative public-market proxies, not instrument-matched histories. SPY is an equity-index proxy and understates single-name risk and idiosyncratic jumps; for equity swaps it also ignores swap basis, financing spread, dividend treatment and swap-specific terms. GLD is spot gold used for Brent, copper and natural-gas futures and has no roll yield or contango. HYG is a total-return high-yield bond ETF that mixes credit spread, rate duration and carry; ETF dislocations from NAV can overstate stress. DEXUSEU stands in for GBP, JPY and AUD forwards and ignores forward points. DGS10 is a US ten-year par-bond proxy: the same duration is used for the 2-year and 5-year futures as well as the 10-year future, and the sovereign positions have no currency or maturity specified in the input data. Curve shape, convexity, roll-down and carry are not represented by this proxy. Within-type product, PB and tier relativities come from Phase 1 rather than from the proxy series. The per-symbol input digest and its reproduction rule are in [pre-registration §1.4](../prereg/PREREGISTRATION_PHASE2B.md#14-input-digest-and-reproducibility).
+
+This calibration exercise and its outputs are not validated. The proxies, assumed margin periods of risk, calibration mapping and backtest assumptions do not establish that rates match actual instruments, PB requirements or regulatory requirements. An identical input digest supports reproducibility under the registered rule; it does not establish model validity.
+
 ## 6 Implementation
 
 | Component | Entry points | Responsibility |
@@ -97,9 +107,10 @@ The report presents re-solved usage, all-in cost attribution and Euler allocatio
 | `src/mfl/optimise.py` | `optimise` | Solve the allocation LP and return diagnostics |
 | `src/mfl/attribution.py` | `attribute`, `pm_usage` | Calculate PM usage, residual allocation and charges |
 | `src/mfl/exhibits.py` | `resolve_usage`, `all_in_cost`, `euler_allocation` | Produce separate allocation and margin exhibits |
+| `src/mfl/calibrate.py` | `run_targets`, `run_backtest`, `run_drivers`, `run_calibrated_case` | Estimate proxy-based targets, evaluate walk-forward coverage and re-run the portfolio case |
 | `src/mfl/io.py` | `load_case`, CSV writer | Load, validate and serialise case data |
-| `src/mfl/report.py` | `build` | Create DuckDB report tables and the HTML report |
-| `src/mfl/cli.py` | `run`, `main` | Coordinate a run and handle failure reporting |
+| `src/mfl/report.py` | `build`, `build_calib` | Create the Phase 1 and calibration HTML reports |
+| `src/mfl/cli.py` | `run`, `calibrate`, `main` | Coordinate runs and handle failure reporting |
 | `sql/*.sql` | SQL views | Shape calculation outputs into report tables |
 
 The package declares Python 3.11 or newer; the CI matrix exercises Python 3.11 and 3.14. Optimisation uses cvxpy with HiGHS, and DuckDB supplies the reporting views. CI installs the package, runs pytest and generates a seeded report. See the [source modules](../src/mfl/) and [CI workflow](../.github/workflows/ci.yml).

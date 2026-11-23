@@ -1,0 +1,2 @@
+status,total_margin_usd,delta_total_margin_usd,financing_cost_usd,delta_financing_cost_usd,margin_funding_cost_usd,delta_margin_funding_cost_usd,slack_capacity_usd,slack_counterparty_usd,slack_borrow_usd,total_slack_usd
+optimal,944334264.70890927,-803356594.75440574,16896602.148151778,-448507.94615229219,2360835.661772273,-2008391.4868860147,0,0,0,0

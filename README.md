@@ -22,6 +22,9 @@ python -m mfl.cli run --seed 42 --out reports/local   # writes reports/local/run
 ## Phase 2a – stress projection
 The stress command writes the pre-registered scenario CSVs to `reports/stress_42/` and adds a summary and top-10 moves section to the existing run report. This is an illustrative static prime-broker margin and funding projection over 90 days: it is not calibrated and is not any firm's methodology. Cleared or exchange margin, path dependence and margin-call dynamics are out of scope. The additional funding requirement is an absolute increase against ST0 plus constraint slack, with no available-liquidity or buffer term; it is not a liquidity-coverage gap.
 
+## Phase 2b – calibration
+Phase 2b adds an illustrative calibration of the margin rates to public-market proxies: ES 97.5% over assumed margin periods of risk, point-in-time stressed-period weighting with a floor, one scaling factor per product type, and a walk-forward exceedance backtest (results in RESULTS.md §12). The proxies are illustrative, not matched to the instruments, and the exercise is not validated. Reproduction is conditional on re-fetched inputs matching the committed input digest. Authorship: the calibration core and its tests C1–C5 are author-written; the pipeline, fetch tooling, CLI, report and tests C6–C13 are AI-assisted under the author's spec, tests and review (DEVIATIONS D-12).
+
 ## Documents
 - [`docs/MODEL_DOC.md`](docs/MODEL_DOC.md) – model documentation (purpose, methodology, limitations, validation status)
 - [`docs/HAND_WORKED_EXAMPLE.md`](docs/HAND_WORKED_EXAMPLE.md) – the two cases the tests check to the cent
