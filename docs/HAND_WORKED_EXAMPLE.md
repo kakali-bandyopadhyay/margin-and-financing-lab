@@ -1,4 +1,4 @@
-# Hand-worked example – margin-and-financing-lab Phase 1
+# Hand-worked example – margin-and-financing-lab (Phase 1 and Phase 2a)
 
 This example hand-traces the two fixed allocations in §6.1 of `prereg/PREREGISTRATION.md`. It is an arithmetic check of the margin and attribution rules; the stated placements define w for each case. Amounts are USD. The concentration threshold is recomputed from the gross that remains at each PB for the full book, each leave-one-out book, and each PM's solo margin.
 
@@ -93,3 +93,98 @@ At X, gross is 10,000,000, all equity. At Y, gross is 26,000,000: short equity 6
 - Shares: A = `3,622,500 / 5,961,600 = 0.6076388889`; B = `2,339,100 / 5,961,600 = 0.3923611111`.
 - Allocated margin: A = `3,519,000 + (0.607638888888… × 103,500) = 3,581,890.625`; B = `2,235,600 + (0.392361111111… × 103,500) = 2,276,209.375`.
 - Charges: A = `3,581,890.625 × 0.0025 = 8,954.7265625` → **8,954.73**; B = `2,276,209.375 × 0.0025 = 5,690.5234375` → **5,690.52**. Rounded charges total 14,645.25 = `M × 0.0025`.
+
+## Phase 2a: stress add-on checks
+
+This section hand-checks the fixed transforms and fixed-allocation identities in `prereg/PREREGISTRATION_PHASE2A.md`. It is an arithmetic check, not a results section; the stress results are reported in `RESULTS.md`. The numbers below are from the primary case (seed 42, `as_of_date` 2026-10-30); the bucket facts and §7 facts are asserted by `tests/acceptance/test_stress.py`, and the fixed-allocation and netting identities are checked there.
+
+### Volatility re-bucketing (ST1a, ST1b)
+
+Phase 1 derives a product's bucket with `margin.vol_bucket`: the last 60 close-to-close log returns through `as_of_date`, sample standard deviation (`ddof=1`), annualised by `sqrt(252)`, then cut at 0.10 / 0.20. ST1a multiplies that annualised vol by 2 and re-buckets with the same cuts; ST1b uses 1.5. A product with fewer than 60 usable returns remains V3.
+
+For the two hand-worked products the return window is 2026-08-10 to 2026-10-30 (60 returns):
+
+| Product | Phase 1 vol | Phase 1 bucket | ×2 vol | ST1a bucket | ×1.5 vol | ST1b bucket |
+|---|---:|---|---:|---|---:|---|
+| `CDS_ISS003` | 0.090769468946 | V1 | 0.181538937892 | V2 | 0.136154203419 | V2 |
+| `CE_ISS008` | 0.193704438203 | V2 | 0.387408876406 | V3 | 0.290556657304 | V3 |
+
+- `CDS_ISS003`: `0.090769 < 0.10` → V1; `×2 = 0.181539`, which is between 0.10 and 0.20 inclusive → V2; `×1.5 = 0.136154` → V2.
+- `CE_ISS008`: `0.193704` is between 0.10 and 0.20 inclusive → V2; `×2 = 0.387409 > 0.20` → V3; `×1.5 = 0.290557 > 0.20` → V3.
+- Across all 73 held products, ST1a moves 27 (9 V1→V2 and 18 V2→V3) and leaves 42 at V3; ST1b moves 22.
+
+### ST2a fixed-allocation scaling (S3)
+
+The uniform rate shock multiplies every `base_rate` by 1.5. At the fixed ST0 allocation `w0`, each family's `r = base_rate × vol_multiplier` scales by 1.5, so `FM` scales by 1.5. The concentration add-on does not: it uses `conc_rate`, not `base_rate`.
+
+PB_B is the only primary-case PB with a non-zero concentration add-on, so it is the clean counter-example to “total margin scales by 1.5”:
+
+| PB_B quantity | ST0 at `w0` | ST2a at `w0` |
+|---|---:|---:|
+| Family margin `FM` | 183,908,280.616502 | 275,862,420.924753 |
+| Concentration add-on | 205,101.122628 | 205,101.122628 |
+| `M = 1.15 × (FM + add-on)` | 211,730,389.000000 | 317,477,650.354489 |
+
+`FM` scales exactly: `1.5 × 183,908,280.616502 = 275,862,420.924753`. The add-on is unchanged, so total margin is not `1.5 × 211,730,389.000000 = 317,595,583.500000`; it is lower by `1.15 × 0.5 × 205,101.122628 = 117,933.145511`. At a PB with no add-on, such as PB_A, total margin does scale exactly: `1.5 × 477,120,106.135151 = 715,680,159.202727`.
+
+### ST2b fixed-allocation scaling (S4)
+
+The two shocked PBs are the ST0 top two by allocated margin: PB_D (`764,910,552.835689`) and PB_A (`477,120,106.135151`). At `w0`, only those two PBs' family margins scale; the other two are unchanged.
+
+| PB | Role | `FM` at `w0` | `M` at `w0` | ST2b `FM` | ST2b `M` |
+|---|---|---:|---:|---:|---:|
+| PB_A | shocked | 414,887,048.813175 | 477,120,106.135151 | 622,330,573.219762 | 715,680,159.202727 |
+| PB_B | unshocked | 183,908,280.616502 | 211,730,389.000000 | 183,908,280.616502 | 211,730,389.000000 |
+| PB_C | unshocked | 255,591,140.428239 | 293,929,811.492475 | 255,591,140.428239 | 293,929,811.492475 |
+| PB_D | shocked | 665,139,611.161469 | 764,910,552.835689 | 997,709,416.742204 | 1,147,365,829.253534 |
+
+For the shocked PBs, `FM_ST2b = 1.5 × FM_ST0`; for the unshocked PBs it is unchanged. PB_B's add-on (205,101.122628) is unchanged, as it must be because `conc_rate`, issuer gross and PB gross are unchanged at fixed allocation.
+
+### ST3 netting decomposition (S7)
+
+The ST3 run is infeasible (counterparty and borrow slack), so the allocation `w3` used below is the minimum-total-slack allocation returned by the Phase 1 slack re-solve. The netting arithmetic is still evaluated on that allocation.
+
+For each PB, with the ST3 allocation `w3`:
+
+```
+M_with(p)    = 1.15 × ( Σ_f r(f,p) × [φ × net(f,p) + (1−φ) × gross(f,p)] + add-on(p) )
+M_without(p) = 1.15 × ( Σ_f r(f,p) × gross(f,p) + add-on(p) )
+NB(p)        = M_without(p) − M_with(p) ≥ 0
+```
+
+`M_without` sets `net = gross` for every family, i.e. treats each position as its own family. The concentration add-on is gross-based and side-blind, so it is identical in both and is not part of the netting effect. The same two quantities at ST0 give `NB0(p)`. Then:
+
+```
+netting_change(p) = NB0(p) − NB(p)          # positive = netting benefit lost
+reallocation(p)   = M_without(p) − M_without0(p)
+delta_vs_st0(p)   = M_with(p) − M0(p) = reallocation(p) + netting_change(p)
+```
+
+Worked PB_B row:
+
+- ST3: `M_with = 623,239,932.663198`; `M_without = 790,059,053.083510`; `NB = 166,819,120.420311`.
+- ST0: `M0 = 211,730,389.000000`; `M_without0 = 411,064,677.001378`; `NB0 = 199,334,288.001378`.
+- `netting_change = 199,334,288.001378 − 166,819,120.420311 = 32,515,167.581067`.
+- `reallocation = 790,059,053.083510 − 411,064,677.001378 = 378,994,376.082131`.
+- `delta = 623,239,932.663198 − 211,730,389.000000 = 411,509,543.663198`.
+- Check: `378,994,376.082131 + 32,515,167.581067 = 411,509,543.663198`.
+
+The terminated PB_D row shows the loss directly: its ST0 `NB0 = 79,493,907.249908` becomes zero at ST3, so `netting_change = +79,493,907.249908`, `reallocation = −844,404,460.085597`, and `delta = −764,910,552.835689`.
+
+For the total:
+
+| Quantity | ST0 | ST3 |
+|---|---:|---:|
+| `M_with` | 1,747,690,859.463315 | 1,794,630,573.663198 |
+| `M_without` | 2,275,466,684.343585 | 2,345,853,537.915310 |
+| Netting benefit `NB` | 527,775,824.880269 | 551,222,964.252112 |
+| `netting_change` | — | −23,447,139.371843 |
+| `reallocation` | — | 70,386,853.571726 |
+| `delta` | — | 46,939,714.199883 |
+
+The identity holds: `70,386,853.571726 − 23,447,139.371843 = 46,939,714.199883`. The total netting change is negative on this run (netting benefit rose on reallocation), so E-S4 (“netting loss”) is **not met**; this is reported as found.
+
+### ST3 terms
+
+PB_D is the terminated PB: `notice_days = 126`, `nav_trigger_pct = 29.1`, termination date `2026-10-30 + 126 days = 2027-03-05`. At ST0, `2,912,025,250.53` of allocated notional sits at PB_D across 106 positions; that is the notional to re-place. The ST3/ST4 cost window starts at 2027-03-05 and remains 90 days long. PB_D is removed from the feasible set, so no position remains there; the two ISS010 shorts that had a locate only at PB_D become borrow slack (`POS0076`, `POS0098`).
+
