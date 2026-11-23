@@ -122,6 +122,38 @@ def _duration(value: object, symbol: str) -> float:
     return duration
 
 
+def write_digest(
+    proxy_map: pd.DataFrame,
+    fetched: dict[str, pd.DataFrame],
+    fetch_date: str,
+    destination: Path,
+) -> pd.DataFrame:
+    """Write one canonical digest record per unique proxy symbol, sorted."""
+    digest_records = []
+    for symbol in sorted(proxy_map["proxy_symbol"].astype(str).unique()):
+        symbol_rows = proxy_map.loc[proxy_map["proxy_symbol"].astype(str).eq(symbol)]
+        variants = symbol_rows[["source", "return_type", "duration"]].drop_duplicates()
+        if len(variants) != 1:
+            raise RuntimeError(f"proxy symbol {symbol} has conflicting source or return definitions")
+        row = variants.iloc[0]
+        frame = fetched[symbol].copy()
+        if row["return_type"] == "dgs10_price_return":
+            frame.attrs["return_type"] = "dgs10_price_return"
+            frame.attrs["duration"] = _duration(row["duration"], symbol)
+        digest_records.append(
+            digest_row(
+                symbol,
+                row["source"],
+                "adjClose" if row["source"] == "Tiingo" else symbol,
+                frame,
+                fetch_date,
+            )
+        )
+    digest = pd.DataFrame(digest_records, columns=DIGEST_COLUMNS)
+    digest.to_csv(destination, index=False, float_format="%.17g", lineterminator="\n", encoding="utf-8")
+    return digest
+
+
 def fetch(start: str, end: str, out_dir: Path) -> None:
     proxy_map = pd.read_csv(PROXY_MAP, dtype=str, keep_default_na=False)
     required = {"product_type", "proxy_symbol", "source", "return_type", "duration"}
@@ -157,24 +189,7 @@ def fetch(start: str, end: str, out_dir: Path) -> None:
         if source == "FRED":
             (fred_dir / f"{symbol}.csv").write_bytes(canonical_raw_bytes(frame))
 
-    digest_records = []
-    for row in proxy_map.itertuples(index=False):
-        frame = fetched[row.proxy_symbol].copy()
-        if row.return_type == "dgs10_price_return":
-            frame.attrs["return_type"] = "dgs10_price_return"
-            frame.attrs["duration"] = _duration(row.duration, row.proxy_symbol)
-        digest_records.append(
-            digest_row(
-                row.proxy_symbol,
-                row.source,
-                "adjClose" if row.source == "Tiingo" else row.proxy_symbol,
-                frame,
-                fetch_date,
-            )
-        )
-    pd.DataFrame(digest_records, columns=DIGEST_COLUMNS).to_csv(
-        DIGEST_PATH, index=False, float_format="%.17g", lineterminator="\n", encoding="utf-8"
-    )
+    write_digest(proxy_map, fetched, fetch_date, DIGEST_PATH)
     print(f"Fetched {len(fetched)} proxy series; digest written to {DIGEST_PATH.name}.")
 
 

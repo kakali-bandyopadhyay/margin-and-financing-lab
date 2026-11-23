@@ -67,3 +67,5 @@ Each entry: date · what changed · why · effect on results · commit.
 - Why: ST4 includes the ST3 termination and already carries PB_D, `notice_days` and `nav_trigger_pct`; leaving the notional blank was an incomplete field flagged in review. The notice timing (126 days > 90-day horizon, cost window from 2027-03-05) is already fixed in prereg §3.6 and is not changed here.
 - Effect: ST4 `notional_to_move_usd` = 2,912,025,250.53 on the same basis as ST3. This is a display/completeness change; margin, slack, additional funding requirement, allocations and Phase 1 are unchanged. It changes the prereg §4.1 wording “ST3 only … blank for ST4”.
 - Commit: a59dbb5
+
+D-13 (23 Nov 2026) – digest writer emitted one row per product type (7) instead of one per symbol (5); fixed before any calibration result existed; hashes, data and method unchanged.
