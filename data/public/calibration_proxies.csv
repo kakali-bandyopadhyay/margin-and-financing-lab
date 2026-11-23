@@ -1,0 +1,8 @@
+product_type,proxy_symbol,source,mpor_days,return_type,duration,notes
+irs_proxy_future,DGS10,FRED,2,dgs10_price_return,8.1757,"DGS10 is a US ten-year par-bond proxy that ignores curve shape for 2Y and 5Y futures and may differ materially from sovereigns with unspecified currency and maturity."
+commodity_future,GLD,Tiingo,2,log_adj_close,,"GLD is spot gold standing in for Brent copper and natural-gas futures and has no roll yield or contango."
+cds_proxy,HYG,Tiingo,5,log_adj_close,,"HYG is a total-return high-yield bond ETF that mixes spread rate duration and carry while ETF dislocations versus NAV can overstate stress."
+cash_equity,SPY,Tiingo,10,log_adj_close,,"SPY is an index proxy that understates single-name equity risk and idiosyncratic jumps."
+equity_swap,SPY,Tiingo,10,log_adj_close,,"SPY understates single-name risk and ignores swap basis financing spread dividend treatment and swap-specific terms."
+fx_forward,DEXUSEU,FRED,10,log_rate,,"DEXUSEU stands in for GBP JPY and AUD forwards and ignores forward points."
+govt_bond,DGS10,FRED,10,dgs10_price_return,8.1757,"DGS10 is a ten-year US par-bond proxy while sovereign currency and maturity are unspecified so sovereign risk may differ materially."

@@ -8,6 +8,8 @@ __pycache__/
 reports/*
 !reports/run_42/
 !reports/stress_42/
+data/public/raw/
+!reports/calib_42/
 *.zip
 *.xlsx
 .pytest_cache/

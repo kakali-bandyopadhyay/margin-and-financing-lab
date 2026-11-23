@@ -49,3 +49,15 @@ Every number the model uses carries one tag: **source** (public citation with da
 | Item | Source | Date accessed | Value | Used for |
 |---|---|---|---|---|
 | CBOT ZN Dec-26 outright non-HRP initial margin and settlement | CME Group ZN margins and settlements pages | 2026-11-18 | Initial $1,875; maintenance $1,875; settle 105.609375 (105'19.5); multiplier $1,000/point; margin snapshot/effective date 2026-11-17 | A7 sanity band – not calibration |
+
+## 5. Phase 2b calibration proxies
+
+| Proxy use | Source / series | Field and transformation | Window | Provenance / limitation |
+|---|---|---|---|---|
+| `irs_proxy_future`, `govt_bond` | FRED DGS10 | Daily 10-year Treasury yield; converted to a duration-based price return using the frozen 10-year par-bond duration in `calibration_proxies.csv` | 2015-01-01 through 2026-10-30 | Public domain; illustrative rates proxy, not maturity- or currency-matched |
+| `fx_forward` | FRED DEXUSEU | USD-per-EUR rate; daily log change | 2015-01-01 through 2026-10-30 | Public domain; stands in for other pairs and omits forward points |
+| `cash_equity`, `equity_swap` | Tiingo SPY | Daily `adjClose`; log return | 2015-01-01 through 2026-10-30 | Free plan; raw prices are git-ignored; index proxy understates single-name and swap-specific risks |
+| `commodity_future` | Tiingo GLD | Daily `adjClose`; log return | 2015-01-01 through 2026-10-30 | Free plan; raw prices are git-ignored; spot-gold proxy for other commodities, without roll yield or contango |
+| `cds_proxy` | Tiingo HYG | Daily `adjClose`; log return | 2015-01-01 through 2026-10-30 | Free plan; raw prices are git-ignored; total-return ETF mixes credit spread, rates, carry and ETF/NAV effects |
+
+Tiingo terms checked before fetching: Free plan; raw price redistribution is not permitted. Only derived statistics and input digests are committed. FRED series are public domain and are committed. Fixed calibration end date: 2026-10-30. Fetch date: `TBD-KAKALI`. The committed `calibration_inputs_digest.csv` records the normalized raw-input and daily-return hashes; reproduction is conditional on identical or tolerance-equivalent fetched observations as described in the Phase 2b pre-registration.

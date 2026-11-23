@@ -188,3 +188,25 @@ The identity holds: `70,386,853.571726 − 23,447,139.371843 = 46,939,714.199883
 
 PB_D is the terminated PB: `notice_days = 126`, `nav_trigger_pct = 29.1`, termination date `2026-10-30 + 126 days = 2027-03-05`. At ST0, `2,912,025,250.53` of allocated notional sits at PB_D across 106 positions; that is the notional to re-place. The ST3/ST4 cost window starts at 2027-03-05 and remains 90 days long. PB_D is removed from the feasible set, so no position remains there; the two ISS010 shorts that had a locate only at PB_D become borrow slack (`POS0076`, `POS0098`).
 
+## Phase 2b – C11 DGS10 transform
+
+Use the hand-worked test yield series `DGS10 = [4.00%, 4.10%, 3.90%]` and the stated as-of test yield `y* = 0.04`. The modified duration of a 10-year semi-annual par bond is:
+
+```text
+D = (1 / 0.04) × [1 − (1 + 0.04 / 2)^(-20)]
+  = 8.1757166723 years
+```
+
+Convert the daily changes in percentage points to decimal yields before applying the duration. The changes are `Δy_1 = +0.001` and `Δy_2 = −0.002`:
+
+```text
+r_1 = ln(1 − 8.1757166723 × 0.001) = −0.0082093211295
+r_2 = ln(1 − 8.1757166723 × (−0.002)) = +0.0162191883083
+```
+
+The test compares both returns and the duration calculation with the implementation to absolute tolerance `1e-12`.
+
+## Phase 2b – C9 window anchoring
+
+Let the estimation date be 31 January and the next month contain 21 trading-day observations. Starting with `P(d_m) = 100`, take each following close to be `100 × exp(0.01j)` on day `j`. For `h = 10`, the first window is days 1–10 and its return is `ln(P(day 10)) − ln(P(d_m)) = 0.10`; a second window uses days 11–20, and day 21 is dropped. For `h = 2`, ten complete windows use days 1–20 and day 21 is dropped. Each window starts immediately after the previous one, and no window crosses the month-end.
+
